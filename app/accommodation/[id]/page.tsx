@@ -1,12 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
 import { Star, Users, Wifi, Eye, MessageSquare } from "lucide-react"
+import CurrencySwap from "@/components/currency-swap"
+import CouponModal from "@/components/coupon-modal"
+import BookingDetailsModal from "@/components/booking-details-modal"
+import CheckoutModal from "@/components/checkout-modal"
 
 export default function RoomDetailPage() {
   const params = useParams()
@@ -16,7 +19,14 @@ export default function RoomDetailPage() {
     { id: 2, author: "Sarah Smith", rating: 4, text: "Very comfortable and clean. Great service!", date: "2025-01-10" },
   ])
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [showCouponModal, setShowCouponModal] = useState(false)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null)
   const [formData, setFormData] = useState({ name: "", email: "", rating: 5, text: "" })
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [guestBalance, setGuestBalance] = useState(0)
+  const [bookingData, setBookingData] = useState(null)
 
   const rooms: { [key: string]: any } = {
     "1": {
@@ -107,6 +117,15 @@ export default function RoomDetailPage() {
 
   const room = rooms[roomId as string]
 
+  useEffect(() => {
+    const email = localStorage.getItem("guestEmail")
+    const savedBalance = localStorage.getItem("guestBalance")
+    setIsLoggedIn(!!email)
+    if (savedBalance) {
+      setGuestBalance(Number.parseFloat(savedBalance))
+    }
+  }, [])
+
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.name && formData.email && formData.text) {
@@ -121,6 +140,60 @@ export default function RoomDetailPage() {
       setFormData({ name: "", email: "", rating: 5, text: "" })
       setShowReviewForm(false)
     }
+  }
+
+  const handleApplyCoupon = (code: string, discount: number) => {
+    setAppliedCoupon({ code, discount })
+  }
+
+  const handleBookRoom = () => {
+    if (isLoggedIn) {
+      setShowBookingModal(true)
+    } else {
+      setShowCouponModal(true)
+    }
+  }
+
+  const handleProceedCheckout = (bookingDataObj: any) => {
+    setBookingData(bookingDataObj)
+    setShowBookingModal(false)
+    setShowCheckoutModal(true)
+  }
+
+  const handleConfirmPayment = (paymentMethod: string, bookingDataObj: any) => {
+    const newBooking = {
+      id: `booking-${Date.now()}`,
+      roomId: bookingDataObj.roomId,
+      roomName: bookingDataObj.roomName,
+      price: bookingDataObj.totalPrice,
+      checkInDate: bookingDataObj.checkInDate,
+      checkOutDate: bookingDataObj.checkOutDate,
+      status: "confirmed" as const,
+      paymentMethod,
+    }
+
+    const existingBookings = JSON.parse(localStorage.getItem("guestBookings") || "[]")
+    const updatedBookings = [newBooking, ...existingBookings]
+    localStorage.setItem("guestBookings", JSON.stringify(updatedBookings))
+
+    if (paymentMethod === "topup") {
+      const newBalance = guestBalance - bookingDataObj.totalPrice
+      localStorage.setItem("guestBalance", newBalance.toString())
+
+      const topupHistory = JSON.parse(localStorage.getItem("topupHistory") || "[]")
+      topupHistory.push({
+        id: `payment-${Date.now()}`,
+        amount: -bookingDataObj.totalPrice,
+        date: new Date().toISOString().split("T")[0],
+        type: "booking_payment",
+        paymentMethod: "Account Balance",
+      })
+      localStorage.setItem("topupHistory", JSON.stringify(topupHistory))
+    }
+
+    setShowCheckoutModal(false)
+    alert("Booking confirmed! Check your dashboard for details.")
+    window.location.href = "/guest-dashboard"
   }
 
   if (!room) {
@@ -216,10 +289,12 @@ export default function RoomDetailPage() {
                   {/* Price */}
                   <div className="mb-6 pb-6 border-b border-border">
                     <p className="text-foreground/70 text-sm mb-2">Price per night</p>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 mb-4">
                       <span className="text-4xl font-bold text-primary">${room.price}</span>
                       <span className="text-foreground/60">/night</span>
                     </div>
+                    {/* Currency Swap */}
+                    <CurrencySwap usdPrice={room.price} />
                   </div>
 
                   {/* Details */}
@@ -234,9 +309,30 @@ export default function RoomDetailPage() {
                     </div>
                   </div>
 
+                  {/* Applied Coupon */}
+                  {appliedCoupon && (
+                    <div className="mb-6 p-4 bg-green-500/10 border border-green-500 rounded-lg">
+                      <p className="text-sm font-semibold text-green-600 mb-1">Coupon Applied!</p>
+                      <p className="text-xs text-foreground/70 mb-2">{appliedCoupon.code}</p>
+                      <p className="text-lg font-bold text-green-600">{appliedCoupon.discount}% Discount</p>
+                      <p className="text-sm text-foreground/60 mt-2">
+                        New Price: ${(room.price * (1 - appliedCoupon.discount / 100)).toFixed(2)}/night
+                      </p>
+                    </div>
+                  )}
+
                   {/* CTA Buttons */}
                   <div className="space-y-3">
-                    <button className="w-full btn-primary text-lg">Book Now</button>
+                    <button onClick={handleBookRoom} className="w-full btn-primary text-lg">
+                      {isLoggedIn ? "Proceed Booking" : "Book Now"}
+                    </button>
+                    {/* Coupon Button */}
+                    <button
+                      onClick={() => setShowCouponModal(true)}
+                      className="w-full border-2 border-secondary text-secondary px-6 py-3 rounded-lg font-semibold hover:bg-secondary hover:text-secondary-foreground transition"
+                    >
+                      Apply Coupon
+                    </button>
                     <button className="w-full border-2 border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary hover:text-primary-foreground transition">
                       Request Info
                     </button>
@@ -254,6 +350,31 @@ export default function RoomDetailPage() {
             </div>
           </div>
         </section>
+
+        {/* Coupon Modal */}
+        <CouponModal
+          isOpen={showCouponModal}
+          onClose={() => setShowCouponModal(false)}
+          onApplyCoupon={handleApplyCoupon}
+        />
+
+        {/* Booking Details Modal */}
+        <BookingDetailsModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          room={room}
+          appliedCoupon={appliedCoupon}
+          onProceedCheckout={handleProceedCheckout}
+        />
+
+        {/* Checkout Modal */}
+        <CheckoutModal
+          isOpen={showCheckoutModal}
+          onClose={() => setShowCheckoutModal(false)}
+          bookingData={bookingData}
+          balance={guestBalance}
+          onConfirmPayment={handleConfirmPayment}
+        />
 
         {/* Reviews Section */}
         <section className="section-padding bg-muted/30">

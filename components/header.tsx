@@ -1,8 +1,8 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
-import BookNowModal from "./book-now-modal" // Assuming BookNowModal is imported from the same directory
+import { useState, useEffect } from "react"
+import BookNowModal from "./book-now-modal"
 import { Globe } from "lucide-react"
 
 interface HeaderProps {
@@ -13,9 +13,19 @@ interface HeaderProps {
 export default function Header({ isMenuOpen, setIsMenuOpen }: HeaderProps) {
   const [showTranslate, setShowTranslate] = useState(false)
   const [showBookModal, setShowBookModal] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const email = localStorage.getItem("guestEmail")
+    setIsLoggedIn(!!email)
+  }, [])
 
   const handleBookNow = () => {
-    setShowBookModal(true)
+    if (isLoggedIn) {
+      window.location.href = "/guest-dashboard"
+    } else {
+      setShowBookModal(true)
+    }
   }
 
   return (
@@ -76,7 +86,7 @@ export default function Header({ isMenuOpen, setIsMenuOpen }: HeaderProps) {
               )}
             </div>
             <button className="btn-primary" onClick={handleBookNow}>
-              Book Now
+              {isLoggedIn ? "Dashboard" : "Book Now"}
             </button>
           </div>
 
@@ -96,7 +106,7 @@ export default function Header({ isMenuOpen, setIsMenuOpen }: HeaderProps) {
               </div>
             )}
             <button className="btn-primary text-sm py-2 px-3" onClick={handleBookNow}>
-              Book Now
+              {isLoggedIn ? "Dashboard" : "Book Now"}
             </button>
           </div>
         </div>

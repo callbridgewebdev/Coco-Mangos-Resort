@@ -1,6 +1,8 @@
 "use client"
 import Link from "next/link"
 import { X } from "lucide-react"
+import { useState } from "react"
+import GuestAuthModal from "@/components/guest-auth-modal"
 
 interface MenuModalProps {
   isOpen: boolean
@@ -8,6 +10,8 @@ interface MenuModalProps {
 }
 
 export default function MenuModal({ isOpen, onClose }: MenuModalProps) {
+  const [showGuestAuthModal, setShowGuestAuthModal] = useState(false)
+
   if (!isOpen) return null
 
   const menuItems = [
@@ -19,9 +23,11 @@ export default function MenuModal({ isOpen, onClose }: MenuModalProps) {
     { label: "Gallery", href: "/gallery" },
     { label: "Reviews", href: "/reviews" },
     { label: "Contact", href: "/contact" },
+    { label: "Guest Login / Register", href: "#", isButton: true },
     { label: "F.A.Q", href: "/faq" },
     { label: "How it Works", href: "/how-it-works" },
     { label: "News & Blog", href: "/news-blog" },
+    { label: "Coupons", href: "/coupons" },
     { label: "Privacy Policy", href: "/legal/privacy-policy" },
     { label: "Terms of Service", href: "/legal/terms-of-service" },
     { label: "Cookie Policy", href: "/legal/cookie-policy" },
@@ -49,19 +55,34 @@ export default function MenuModal({ isOpen, onClose }: MenuModalProps) {
 
         <div className="p-6">
           <div className="grid grid-cols-2 gap-3">
-            {menuItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={onClose}
-                className="px-4 py-3 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 text-foreground text-sm font-semibold transition-all duration-300 text-center hover:bg-gradient-to-br hover:from-primary/15 hover:to-secondary/15 hover:border-primary/50 hover:shadow-lg hover:scale-105 active:scale-95"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {menuItems.map((item) =>
+              item.isButton ? (
+                <button
+                  key={item.label}
+                  onClick={() => {
+                    setShowGuestAuthModal(true)
+                    onClose()
+                  }}
+                  className="px-4 py-3 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 text-foreground text-sm font-semibold transition-all duration-300 text-center hover:bg-gradient-to-br hover:from-primary/15 hover:to-secondary/15 hover:border-primary/50 hover:shadow-lg hover:scale-105 active:scale-95"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onClose}
+                  className="px-4 py-3 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 text-foreground text-sm font-semibold transition-all duration-300 text-center hover:bg-gradient-to-br hover:from-primary/15 hover:to-secondary/15 hover:border-primary/50 hover:shadow-lg hover:scale-105 active:scale-95"
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </div>
         </div>
       </div>
+
+      <GuestAuthModal isOpen={showGuestAuthModal} onClose={() => setShowGuestAuthModal(false)} />
     </div>
   )
 }

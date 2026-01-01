@@ -118,23 +118,45 @@ export default function AccommodationPage() {
             <h2 className="text-3xl sm:text-4xl font-bold mb-8 sm:mb-12 text-center">Special Offers</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
               {[
-                { title: "Early Bird Discount", desc: "Book 30 days in advance for 20% off", badge: "20%" },
-                { title: "Extended Stay", desc: "5+ nights get 15% discount on accommodation", badge: "15%" },
+                {
+                  title: "Early Bird Discount",
+                  desc: "Book 30 days in advance for 20% off",
+                  badge: "20%",
+                  expires: "5 days left",
+                },
+                {
+                  title: "Extended Stay",
+                  desc: "5+ nights get 15% discount on accommodation",
+                  badge: "15%",
+                  expires: "10 days left",
+                },
                 {
                   title: "Group Booking",
                   desc: "Book 5+ rooms and enjoy exclusive group rates",
                   badge: "25%",
+                  expires: "3 days left",
                 },
               ].map((offer, i) => (
                 <div
                   key={i}
-                  className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition hover:scale-105 text-center"
+                  className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition hover:scale-105 text-center relative"
                 >
+                  <div className="absolute top-3 right-3 text-xs bg-red-500/20 text-red-600 px-2 py-1 rounded-lg font-semibold">
+                    {offer.expires}
+                  </div>
                   <div className="text-3xl sm:text-4xl font-bold text-secondary mb-4">{offer.badge}</div>
                   <h3 className="text-lg sm:text-xl font-bold mb-2">{offer.title}</h3>
                   <p className="text-foreground/70 text-sm sm:text-base">{offer.desc}</p>
                 </div>
               ))}
+            </div>
+            <div className="text-center mt-8">
+              <a
+                href="/coupons"
+                className="inline-block px-8 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-lg font-bold hover:shadow-lg transition"
+              >
+                View All Coupons & Offers
+              </a>
             </div>
           </div>
         </section>

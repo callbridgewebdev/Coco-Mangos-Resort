@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import GuestAuthModal from "@/components/guest-auth-modal"
 import { useState } from "react"
 import Link from "next/link"
 import { Facebook, Youtube, Mail } from "lucide-react"
@@ -9,6 +9,7 @@ import { Facebook, Youtube, Mail } from "lucide-react"
 export default function Footer() {
   const [email, setEmail] = useState("")
   const [subscribed, setSubscribed] = useState(false)
+  const [showGuestAuthModal, setShowGuestAuthModal] = useState(false)
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,6 +84,14 @@ export default function Footer() {
             <h4 className="font-bold mb-4">Support</h4>
             <ul className="space-y-2 text-background/80 dark:text-foreground/70 text-sm">
               <li>
+                <button
+                  onClick={() => setShowGuestAuthModal(true)}
+                  className="hover:text-background dark:hover:text-foreground transition cursor-pointer"
+                >
+                  Guest Login / Register
+                </button>
+              </li>
+              <li>
                 <Link href="/faq" className="hover:text-background dark:hover:text-foreground transition">
                   F.A.Q
                 </Link>
@@ -95,6 +104,11 @@ export default function Footer() {
               <li>
                 <Link href="/news-blog" className="hover:text-background dark:hover:text-foreground transition">
                   News & Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/coupons" className="hover:text-background dark:hover:text-foreground transition">
+                  Coupons & Offers
                 </Link>
               </li>
               <li>
@@ -209,6 +223,14 @@ export default function Footer() {
             <h4 className="font-bold mb-3 text-sm">Support</h4>
             <ul className="space-y-1 text-background/80 dark:text-foreground/70 text-xs">
               <li>
+                <button
+                  onClick={() => setShowGuestAuthModal(true)}
+                  className="hover:text-background dark:hover:text-foreground transition cursor-pointer text-left"
+                >
+                  Guest Login / Register
+                </button>
+              </li>
+              <li>
                 <Link href="/faq" className="hover:text-background dark:hover:text-foreground transition">
                   F.A.Q
                 </Link>
@@ -221,6 +243,11 @@ export default function Footer() {
               <li>
                 <Link href="/news-blog" className="hover:text-background dark:hover:text-foreground transition">
                   News & Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/coupons" className="hover:text-background dark:hover:text-foreground transition">
+                  Coupons & Offers
                 </Link>
               </li>
               <li>
@@ -404,6 +431,8 @@ export default function Footer() {
           <p>Copyright &copy; 2025. Coco Mangos Place Resort. All Rights Reserved. | Callbridge Web Design Services</p>
         </div>
       </div>
+      {/* Guest Auth Modal */}
+      <GuestAuthModal isOpen={showGuestAuthModal} onClose={() => setShowGuestAuthModal(false)} />
     </footer>
   )
 }

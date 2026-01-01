@@ -3,6 +3,7 @@
 import { Users, Wifi, Cloud, Lock } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import PriceConverter from "./price-converter"
 
 interface Room {
   id: number
@@ -53,6 +54,10 @@ export default function RoomCard({ room }: RoomCardProps) {
           <span>{room.capacity}</span>
         </div>
 
+        <div className="mb-4 pb-4 border-b border-border">
+          <PriceConverter priceUSD={room.price} />
+        </div>
+
         {/* Amenities */}
         {isExpanded && (
           <div className="mb-4 pb-4 border-b border-border">
@@ -67,11 +72,7 @@ export default function RoomCard({ room }: RoomCardProps) {
         )}
 
         {/* Footer */}
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="text-3xl font-bold text-primary">${room.price}</span>
-            <span className="text-foreground/70 ml-2">per night</span>
-          </div>
+        <div className="flex justify-between items-center mb-4">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition"
@@ -80,7 +81,7 @@ export default function RoomCard({ room }: RoomCardProps) {
           </button>
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2">
           <Link
             href={`/accommodation/${room.id}`}
             className="flex-1 py-3 bg-border text-foreground rounded-lg font-bold hover:bg-primary hover:text-primary-foreground transition text-center"
