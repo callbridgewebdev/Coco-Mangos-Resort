@@ -1,9 +1,8 @@
 "use client"
 
-import { Suspense } from "react"
-import { useEffect, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Search } from "lucide-react"
+import { ArrowLeft, Search, Trash2, Edit2, Plus } from "lucide-react"
 import Link from "next/link"
 
 interface Guest {
@@ -20,6 +19,9 @@ function GuestsContent() {
   const [guests, setGuests] = useState<Guest[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingGuest, setEditingGuest] = useState<Guest | null>(null)
+  const [formData, setFormData] = useState({ full_name: "", email: "", phone: "", account_balance: 0 })
 
   useEffect(() => {
     const isAdmin = localStorage.getItem("admin_authenticated")
@@ -32,37 +34,117 @@ function GuestsContent() {
 
   const fetchGuests = async () => {
     try {
-      setGuests([
-        {
-          id: "1",
-          full_name: "John Doe",
-          email: "john@example.com",
-          phone: "+63 9123456789",
-          account_balance: 5000,
-          created_at: "2025-01-01",
-        },
-        {
-          id: "2",
-          full_name: "Jane Smith",
-          email: "jane@example.com",
-          phone: "+63 9234567890",
-          account_balance: 7500,
-          created_at: "2025-01-02",
-        },
-        {
-          id: "3",
-          full_name: "Mike Johnson",
-          email: "mike@example.com",
-          phone: "+63 9345678901",
-          account_balance: 2500,
-          created_at: "2025-01-03",
-        },
-      ])
+      const response = await fetch("/api/guests", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setGuests(data)
+      } else {
+        // Fallback to mock data if API fails
+        setGuests([
+          {
+            id: "1",
+            full_name: "John Doe",
+            email: "john@example.com",
+            phone: "+63 9123456789",
+            account_balance: 5000,
+            created_at: "2025-01-01",
+          },
+          {
+            id: "2",
+            full_name: "Jane Smith",
+            email: "jane@example.com",
+            phone: "+63 9234567890",
+            account_balance: 7500,
+            created_at: "2025-01-02",
+          },
+          {
+            id: "3",
+            full_name: "Mike Johnson",
+            email: "mike@example.com",
+            phone: "+63 9345678901",
+            account_balance: 2500,
+            created_at: "2025-01-03",
+          },
+        ])
+      }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching guests:", error)
       setLoading(false)
     }
+  }
+
+  const handleAddGuest = async () => {
+    if (!formData.full_name || !formData.email) return
+
+    try {
+      const response = await fetch("/api/guests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        const newGuest = await response.json()
+        setGuests([newGuest, ...guests])
+        setFormData({ full_name: "", email: "", phone: "", account_balance: 0 })
+        setShowAddForm(false)
+      }
+    } catch (error) {
+      console.error("[v0] Error adding guest:", error)
+    }
+  }
+
+  const handleUpdateGuest = async () => {
+    if (!editingGuest) return
+
+    try {
+      const response = await fetch(`/api/guests/${editingGuest.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        setGuests(guests.map((g) => (g.id === editingGuest.id ? { ...editingGuest, ...formData } : g)))
+        setEditingGuest(null)
+        setFormData({ full_name: "", email: "", phone: "", account_balance: 0 })
+      }
+    } catch (error) {
+      console.error("[v0] Error updating guest:", error)
+    }
+  }
+
+  const handleDeleteGuest = async (id: string) => {
+    if (confirm("Are you sure you want to delete this guest?")) {
+      try {
+        const response = await fetch(`/api/guests/${id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        })
+
+        if (response.ok) {
+          setGuests(guests.filter((g) => g.id !== id))
+        }
+      } catch (error) {
+        console.error("[v0] Error deleting guest:", error)
+      }
+    }
+  }
+
+  const startEdit = (guest: Guest) => {
+    setEditingGuest(guest)
+    setFormData({
+      full_name: guest.full_name,
+      email: guest.email,
+      phone: guest.phone,
+      account_balance: guest.account_balance,
+    })
+    setShowAddForm(true)
   }
 
   const filteredGuests = guests.filter(
@@ -85,12 +167,77 @@ function GuestsContent() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/admin-dashboard" className="text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Guests Management</h1>
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/admin-dashboard" className="text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">Guests Management</h1>
+          </div>
+          <button
+            onClick={() => {
+              setEditingGuest(null)
+              setFormData({ full_name: "", email: "", phone: "", account_balance: 0 })
+              setShowAddForm(!showAddForm)
+            }}
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Add Guest
+          </button>
         </div>
+
+        {showAddForm && (
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold mb-4">{editingGuest ? "Edit Guest" : "Add New Guest"}</h2>
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="tel"
+                placeholder="Phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="number"
+                placeholder="Account Balance"
+                value={formData.account_balance}
+                onChange={(e) => setFormData({ ...formData, account_balance: Number.parseFloat(e.target.value) })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={editingGuest ? handleUpdateGuest : handleAddGuest}
+                className="flex-1 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-semibold"
+              >
+                {editingGuest ? "Update Guest" : "Add Guest"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddForm(false)
+                  setEditingGuest(null)
+                }}
+                className="flex-1 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="mb-6 flex items-center gap-4">
@@ -115,6 +262,7 @@ function GuestsContent() {
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Phone</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Account Balance</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Joined</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,6 +273,16 @@ function GuestsContent() {
                     <td className="py-4 px-4 text-gray-700">{guest.phone}</td>
                     <td className="py-4 px-4 text-gray-900 font-semibold">₱{guest.account_balance.toLocaleString()}</td>
                     <td className="py-4 px-4 text-gray-600">{new Date(guest.created_at).toLocaleDateString()}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      <div className="flex gap-2">
+                        <button onClick={() => startEdit(guest)} className="text-blue-600 hover:text-blue-700">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteGuest(guest.id)} className="text-red-600 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,9 +1,8 @@
 "use client"
 
-import { Suspense } from "react"
-import { useEffect, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Search } from "lucide-react"
+import { ArrowLeft, Search, Plus } from "lucide-react"
 import Link from "next/link"
 
 interface Payment {
@@ -22,6 +21,16 @@ function PaymentsContent() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formData, setFormData] = useState({
+    guest_name: "",
+    booking_id: "",
+    amount: 0,
+    payment_method: "Account Balance",
+    status: "pending",
+  })
+
+  const paymentMethods = ["Account Balance", "GCash", "PayMaya", "Bank Transfer"]
 
   useEffect(() => {
     const isAdmin = localStorage.getItem("admin_authenticated")
@@ -34,44 +43,55 @@ function PaymentsContent() {
 
   const fetchPayments = async () => {
     try {
-      setPayments([
-        {
-          id: "1",
-          guest_name: "John Doe",
-          booking_id: "BK001",
-          amount: 1497,
-          payment_method: "Account Balance",
-          status: "approved",
-          created_at: "2025-01-14",
-        },
-        {
-          id: "2",
-          guest_name: "Jane Smith",
-          booking_id: "BK002",
-          amount: 1197,
-          payment_method: "GCash",
-          status: "pending",
-          created_at: "2025-01-15",
-        },
-        {
-          id: "3",
-          guest_name: "Mike Johnson",
-          booking_id: "BK003",
-          amount: 1797,
-          payment_method: "PayMaya",
-          status: "approved",
-          created_at: "2025-01-16",
-        },
-        {
-          id: "4",
-          guest_name: "Sarah Davis",
-          booking_id: "BK004",
-          amount: 999,
-          payment_method: "Bank Transfer",
-          status: "failed",
-          created_at: "2025-01-17",
-        },
-      ])
+      const response = await fetch("/api/payments", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPayments(data)
+      } else {
+        // Fallback mock data
+        setPayments([
+          {
+            id: "1",
+            guest_name: "John Doe",
+            booking_id: "BK001",
+            amount: 1497,
+            payment_method: "Account Balance",
+            status: "approved",
+            created_at: "2025-01-14",
+          },
+          {
+            id: "2",
+            guest_name: "Jane Smith",
+            booking_id: "BK002",
+            amount: 1197,
+            payment_method: "GCash",
+            status: "pending",
+            created_at: "2025-01-15",
+          },
+          {
+            id: "3",
+            guest_name: "Mike Johnson",
+            booking_id: "BK003",
+            amount: 1797,
+            payment_method: "PayMaya",
+            status: "approved",
+            created_at: "2025-01-16",
+          },
+          {
+            id: "4",
+            guest_name: "Sarah Davis",
+            booking_id: "BK004",
+            amount: 999,
+            payment_method: "Bank Transfer",
+            status: "failed",
+            created_at: "2025-01-17",
+          },
+        ])
+      }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching payments:", error)
@@ -79,8 +99,51 @@ function PaymentsContent() {
     }
   }
 
-  const updatePaymentStatus = (id: string, newStatus: string) => {
-    setPayments(payments.map((p) => (p.id === id ? { ...p, status: newStatus } : p)))
+  const handleAddPayment = async () => {
+    if (!formData.guest_name || !formData.booking_id) return
+
+    try {
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        const newPayment = await response.json()
+        setPayments([newPayment, ...payments])
+        resetForm()
+      }
+    } catch (error) {
+      console.error("[v0] Error adding payment:", error)
+    }
+  }
+
+  const updatePaymentStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/payments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        setPayments(payments.map((p) => (p.id === id ? { ...p, status: newStatus } : p)))
+      }
+    } catch (error) {
+      console.error("[v0] Error updating payment:", error)
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      guest_name: "",
+      booking_id: "",
+      amount: 0,
+      payment_method: "Account Balance",
+      status: "pending",
+    })
+    setShowAddForm(false)
   }
 
   const filteredPayments = payments.filter((payment) => {
@@ -105,12 +168,92 @@ function PaymentsContent() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/admin-dashboard" className="text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Payments Management</h1>
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Link href="/admin-dashboard" className="text-gray-600 hover:text-gray-900">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">Payments Management</h1>
+          </div>
+          <button
+            onClick={() => {
+              setFormData({
+                guest_name: "",
+                booking_id: "",
+                amount: 0,
+                payment_method: "Account Balance",
+                status: "pending",
+              })
+              setShowAddForm(!showAddForm)
+            }}
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Add Payment
+          </button>
         </div>
+
+        {showAddForm && (
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold mb-4">Record Manual Payment</h2>
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Guest Name"
+                value={formData.guest_name}
+                onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="text"
+                placeholder="Booking ID"
+                value={formData.booking_id}
+                onChange={(e) => setFormData({ ...formData, booking_id: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="number"
+                placeholder="Amount"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: Number.parseFloat(e.target.value) })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <select
+                value={formData.payment_method}
+                onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                {paymentMethods.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddPayment}
+                className="flex-1 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-semibold"
+              >
+                Add Payment
+              </button>
+              <button
+                onClick={resetForm}
+                className="flex-1 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="mb-6 flex items-center gap-4">
@@ -174,7 +317,7 @@ function PaymentsContent() {
                       {payment.status === "pending" && (
                         <button
                           onClick={() => updatePaymentStatus(payment.id, "approved")}
-                          className="text-amber-600 hover:text-amber-700 text-sm font-medium"
+                          className="text-green-600 hover:text-green-700 text-sm font-medium"
                         >
                           Approve
                         </button>
