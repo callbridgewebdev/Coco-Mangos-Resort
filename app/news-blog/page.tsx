@@ -10,13 +10,14 @@ export default function NewsBlogPage() {
   const blogsPerPage = 6
 
   const allBlogPosts = [
-    // Coco Mangos Resort Blogs (6)
+    // Coco Mangos Resort Blogs (6) - First 3 marked as "Posted Today"
     {
       id: 1,
       title: "Welcome to Coco Mangos Place Resort: Your Tropical Paradise Awaits",
       excerpt:
         "Discover why Coco Mangos is the ultimate destination for luxury tropical getaways with stunning ocean views and world-class amenities.",
-      date: "December 28, 2025",
+      date: "Today",
+      postedToday: true,
       author: "Resort Team",
       category: "Coco Mangos",
       image: "/tropical-resort-lobby-with-palm-trees.jpg",
@@ -89,7 +90,8 @@ export default function NewsBlogPage() {
       title: "Panglao Island: Gateway to Bohol's Best Adventures",
       excerpt:
         "Explore Panglao Island, home to stunning beaches, vibrant culture, and world-class resorts including Coco Mangos.",
-      date: "November 28, 2025",
+      date: "Today",
+      postedToday: true,
       author: "Travel Guide Team",
       category: "Panglao Island",
       image: "/pristine-tropical-beach-with-palm-trees-sunset.jpg",
@@ -162,7 +164,8 @@ export default function NewsBlogPage() {
       title: "Why Bohol is the Perfect Tropical Destination: A Complete Guide",
       excerpt:
         "Discover why Bohol attracts travelers worldwide with natural wonders, culture, and adventure opportunities.",
-      date: "October 28, 2025",
+      date: "Today",
+      postedToday: true,
       author: "Travel Journalist",
       category: "Bohol Travel",
       image: "/tropical-resort-lobby-with-palm-trees.jpg",
@@ -257,8 +260,56 @@ export default function NewsBlogPage() {
           </div>
         </section>
 
+        {/* Latest Posted Today section */}
         <section className="section-padding">
           <div className="section-max-width">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">Latest Posted Today</h2>
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
+              {allBlogPosts
+                .filter((post) => post.postedToday)
+                .map((post) => (
+                  <article
+                    key={post.id}
+                    className="bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/30 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    <div className="bg-gradient-to-br from-primary/20 to-secondary/20 h-48 overflow-hidden relative">
+                      <img
+                        src={post.image || "/placeholder.svg"}
+                        alt={post.title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+                        NEW
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex gap-2 mb-3">
+                        <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                          {post.category}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold mb-3 line-clamp-2">{post.title}</h3>
+                      <p className="text-foreground/70 text-sm mb-4 line-clamp-2">{post.excerpt}</p>
+                      <div className="flex items-center gap-4 text-xs text-foreground/60 mb-4">
+                        <span className="font-semibold text-primary">{post.date}</span>
+                        <span>{post.author}</span>
+                      </div>
+                      <a
+                        href={`/news-blog/${post.id}`}
+                        className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
+                      >
+                        Read More <ArrowRight size={16} />
+                      </a>
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section-padding bg-muted/20">
+          <div className="section-max-width">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">All Articles</h2>
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               {displayedPosts.map((post) => (
                 <article

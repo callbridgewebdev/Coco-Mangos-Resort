@@ -102,9 +102,9 @@ export default function ContactPage() {
             {/* Contact Form & Map */}
             <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
               {/* Form */}
-              <div>
+              <div className="flex flex-col">
                 <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Send us a Message</h2>
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 flex-1 flex flex-col justify-between">
                   <div>
                     <label className="block font-semibold mb-2 text-sm md:text-base">Name</label>
                     <input
@@ -150,20 +150,21 @@ export default function ContactPage() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full btn-primary flex items-center justify-center gap-2 text-sm md:text-base"
+                    className="w-full btn-primary flex items-center justify-center gap-2 text-sm md:text-base mt-auto"
                   >
                     <Send size={18} /> Send Message
                   </button>
                 </form>
               </div>
 
-              <div>
+              {/* Map */}
+              <div className="flex flex-col">
                 <h2 className="text-3xl font-bold mb-8">Find Us</h2>
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1967.2330512660799!2d123.75701166709085!3d9.555027895819201!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33abac8f122fd9f5%3A0x48ae70138f14b177!2sCocomango&#39;s%20Resort!5e0!3m2!1sen!2sid!4v1767248003030!5m2!1sen!2sid"
                   width="100%"
-                  height="400"
-                  style={{ border: 0, borderRadius: "0.625rem" }}
+                  className="flex-1"
+                  style={{ border: 0, borderRadius: "0.625rem", minHeight: "400px" }}
                   allowFullScreen={true}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -202,7 +203,7 @@ export default function ContactPage() {
                 aria-label="YouTube"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93-.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93-.502 5.814a3.016 3.016 0 0 0 2.122 2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                 </svg>
               </a>
               <a
