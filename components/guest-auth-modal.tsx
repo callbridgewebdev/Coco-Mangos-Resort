@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { X, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react"
 import { validateEmail, validateUsername, validatePassword } from "@/lib/validation"
 import { getRecaptchaKey } from "@/app/actions/get-recaptcha-key"
@@ -27,9 +27,8 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
-  const [recaptchaToken, setRecaptchaToken] = useState("")
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState("")
-  const [recaptchaWidgetId, setRecaptchaWidgetId] = useState<number | null>(null)
+  const recaptchaLoadedRef = useRef(false)
 
   useEffect(() => {
     const loadRecaptchaKey = async () => {
@@ -40,66 +39,83 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   }, [])
 
   useEffect(() => {
-    // Load reCAPTCHA v2 script if site key is available
-    if (recaptchaSiteKey && !window.grecaptcha) {
-      const script = document.createElement("script")
-      script.src = "https://www.google.com/recaptcha/api.js"
-      script.async = true
-      script.defer = true
-      script.onload = () => {
-        console.log("[v0] reCAPTCHA v2 script loaded successfully")
-        // Wait for DOM to be ready before rendering
-        setTimeout(() => {
-          const container = document.getElementById("recaptcha")
-          if (container && window.grecaptcha && window.grecaptcha.render) {
-            try {
-              const widgetId = window.grecaptcha.render(container, {
-                sitekey: recaptchaSiteKey,
-              })
-              setRecaptchaWidgetId(widgetId)
-            } catch (error) {
-              console.error("[v0] Failed to render reCAPTCHA widget:", error)
-            }
-          }
-        }, 100)
-      }
-      script.onerror = () => {
-        console.error("[v0] Failed to load reCAPTCHA v2 script")
-      }
-      document.head.appendChild(script)
-    }
-  }, [recaptchaSiteKey])
+    if (recaptchaSiteKey && !recaptchaLoadedRef.current && isOpen) {
+      recaptchaLoadedRef.current = true
 
-  const getRecaptchaToken = async () => {
-    if (!recaptchaSiteKey) {
-      console.error("[v0] reCAPTCHA site key not available")
-      return ""
+      // Check if script already exists
+      if (!document.querySelector('script[src*="recaptcha"]')) {
+        const script = document.createElement("script")
+        script.src = "https://www.google.com/recaptcha/api.js"
+        script.async = true
+        script.defer = true
+        script.onload = () => {
+          console.log("[v0] reCAPTCHA v2 script loaded successfully")
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            renderRecaptchaWidget()
+          })
+        }
+        script.onerror = () => {
+          console.error("[v0] Failed to load reCAPTCHA v2 script")
+        }
+        document.head.appendChild(script)
+      } else {
+        // Script already exists, render the widget
+        if (window.grecaptcha) {
+          requestAnimationFrame(() => {
+            renderRecaptchaWidget()
+          })
+        }
+      }
     }
+  }, [recaptchaSiteKey, isOpen])
 
+  const renderRecaptchaWidget = () => {
     if (!window.grecaptcha) {
-      console.error("[v0] reCAPTCHA not loaded yet")
-      return ""
+      console.error("[v0] grecaptcha is not available")
+      return
+    }
+
+    const container = document.getElementById("recaptcha")
+    if (!container) {
+      console.error("[v0] reCAPTCHA container not found")
+      return
     }
 
     try {
-      const token = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("reCAPTCHA timeout")), 5000)
-
-        // For reCAPTCHA v2, we need to render a widget or use the execute method differently
-        // Since we're using v2 checkbox, we'll get token from the widget
-        if (window.grecaptcha && window.grecaptcha.getResponse) {
-          const token = window.grecaptcha.getResponse(recaptchaWidgetId)
-          clearTimeout(timeout)
-          resolve(token)
-        } else {
-          clearTimeout(timeout)
-          reject(new Error("reCAPTCHA widget not ready"))
-        }
+      // Clear any existing widget
+      container.innerHTML = ""
+      window.grecaptcha.render(container, {
+        sitekey: recaptchaSiteKey,
+        callback: () => {
+          console.log("[v0] reCAPTCHA verified")
+        },
+        "expired-callback": () => {
+          console.log("[v0] reCAPTCHA expired")
+        },
       })
+      console.log("[v0] reCAPTCHA v2 widget rendered successfully")
+    } catch (error) {
+      console.error("[v0] Failed to render reCAPTCHA widget:", error)
+    }
+  }
+
+  const getRecaptchaToken = async (): Promise<string> => {
+    if (!window.grecaptcha) {
+      throw new Error("reCAPTCHA not loaded yet")
+    }
+
+    try {
+      const token = window.grecaptcha.getResponse()
+
+      if (!token) {
+        throw new Error("Please complete the reCAPTCHA challenge")
+      }
+
       return token
     } catch (error) {
       console.error("[v0] Failed to get reCAPTCHA token:", error)
-      return ""
+      throw error
     }
   }
 
@@ -170,6 +186,9 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
 
       if (!response.ok) {
         setError(data.error || "Authentication failed")
+        if (window.grecaptcha) {
+          window.grecaptcha.reset()
+        }
         return
       }
 
@@ -191,7 +210,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
       }, 1000)
     } catch (err) {
       console.error("[v0] Auth error:", err)
-      setError("Network error. Please try again.")
+      setError(err instanceof Error ? err.message : "Network error. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -412,8 +431,8 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
                     rememberMe: false,
                     agreeToTerms: false,
                   })
-                  if (recaptchaWidgetId) {
-                    window.grecaptcha.reset(recaptchaWidgetId)
+                  if (window.grecaptcha) {
+                    window.grecaptcha.reset()
                   }
                 }}
                 className="text-primary hover:text-secondary font-semibold transition"
@@ -450,7 +469,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
           </div>
           {/* reCAPTCHA v2 checkbox widget container */}
           <div className="mt-4 flex justify-center">
-            <div id="recaptcha" className="g-recaptcha" data-sitekey={recaptchaSiteKey}></div>
+            <div id="recaptcha" className="g-recaptcha"></div>
           </div>
         </div>
       </div>
@@ -462,9 +481,9 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
 declare global {
   interface Window {
     grecaptcha: {
-      getResponse: (widgetId?: number) => string
-      reset: (widgetId?: number) => void
-      render: (container: string | HTMLElement, options: Record<string, unknown>) => number
+      getResponse: () => string
+      reset: () => void
+      render: (container: string | HTMLElement, options: Record<string, unknown>) => void
     }
   }
 }
