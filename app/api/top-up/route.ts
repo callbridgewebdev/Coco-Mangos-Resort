@@ -6,11 +6,19 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     const { searchParams } = new URL(request.url)
     const guestId = searchParams.get("guest_id")
+    const status = searchParams.get("status")
 
-    let query = supabase.from("top_up_transactions").select("*").order("created_at", { ascending: false })
+    let query = supabase
+      .from("top_up_transactions")
+      .select("*, guests(full_name, email)")
+      .order("created_at", { ascending: false })
 
     if (guestId) {
       query = query.eq("guest_id", guestId)
+    }
+
+    if (status) {
+      query = query.eq("status", status)
     }
 
     const { data, error } = await query
@@ -36,16 +44,15 @@ export async function POST(request: NextRequest) {
           guest_id: body.guest_id,
           amount: body.amount,
           payment_method: body.payment_method,
-          status: body.status || "pending",
+          reference_number: body.reference_number,
+          receipt_url: body.receipt_url,
+          status: "pending", // Always pending until admin approves
         },
       ])
       .select()
       .single()
 
     if (error) throw error
-
-    // Update guest balance
-    await supabase.from("guests").update({ account_balance: body.new_balance }).eq("id", body.guest_id)
 
     return NextResponse.json(data)
   } catch (error) {

@@ -2,25 +2,43 @@
 
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Star, ChevronLeft, ChevronRight } from "lucide-react"
+
+interface GalleryItem {
+  id: string
+  title: string
+  description: string
+  image_url: string
+  category: string
+  sort_order: number
+  is_published: boolean
+}
 
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [reviewsPage, setReviewsPage] = useState(0)
-  const [showSwipeHint, setShowSwipeHint] = useState(true)
+  const [images, setImages] = useState<GalleryItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const images = [
-    { id: 1, src: "/gallery-beach-1.jpg", alt: "Pristine beach at sunset", category: "Beach" },
-    { id: 2, src: "/gallery-pool-1.jpg", alt: "Resort infinity pool", category: "Pool" },
-    { id: 3, src: "/gallery-room-1.jpg", alt: "Luxury room interior", category: "Rooms" },
-    { id: 4, src: "/gallery-dining-1.jpg", alt: "Fine dining restaurant", category: "Dining" },
-    { id: 5, src: "/gallery-beach-2.jpg", alt: "Beach activities", category: "Beach" },
-    { id: 6, src: "/gallery-spa-1.jpg", alt: "Wellness spa", category: "Wellness" },
-    { id: 7, src: "/gallery-garden-1.jpg", alt: "Tropical gardens", category: "Grounds" },
-    { id: 8, src: "/gallery-night-1.jpg", alt: "Resort at night", category: "Evening" },
-  ]
+  useEffect(() => {
+    fetchGallery()
+  }, [])
+
+  const fetchGallery = async () => {
+    try {
+      const response = await fetch("/api/gallery?published=true")
+      if (response.ok) {
+        const data = await response.json()
+        setImages(data)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching gallery:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const allReviews = [
     {
@@ -75,61 +93,72 @@ export default function GalleryPage() {
 
         <section className="section-padding pb-32 md:pb-16">
           <div className="section-max-width">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {paginatedImages.map((image) => (
-                <div
-                  key={image.id}
-                  className="relative h-32 md:h-48 lg:h-64 rounded-lg overflow-hidden cursor-pointer group"
-                  onClick={() => setSelectedImage(image.src)}
-                >
-                  <img
-                    src={image.src || "/placeholder.svg"}
-                    alt={image.alt}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                    <span className="text-white font-bold opacity-0 group-hover:opacity-100 transition text-sm md:text-base">
-                      View
-                    </span>
-                  </div>
-                  <div className="absolute bottom-2 left-2">
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                      {image.category}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <button
-                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                disabled={currentPage === 0}
-                className="px-4 py-2 rounded-lg border border-border disabled:opacity-50 hover:bg-muted transition"
-              >
-                Previous
-              </button>
-              <div className="flex gap-2">
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i)}
-                    className={`w-8 h-8 rounded-lg transition ${
-                      currentPage === i ? "bg-primary text-primary-foreground" : "border border-border hover:bg-muted"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-foreground/60">Loading gallery...</p>
               </div>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                disabled={currentPage === totalPages - 1}
-                className="px-4 py-2 rounded-lg border border-border disabled:opacity-50 hover:bg-muted transition"
-              >
-                Next
-              </button>
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                  {paginatedImages.map((image) => (
+                    <div
+                      key={image.id}
+                      className="relative h-32 md:h-48 lg:h-64 rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => setSelectedImage(image.image_url)}
+                    >
+                      <img
+                        src={image.image_url || "/placeholder.svg"}
+                        alt={image.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                        <span className="text-white font-bold opacity-0 group-hover:opacity-100 transition text-sm md:text-base">
+                          View
+                        </span>
+                      </div>
+                      <div className="absolute bottom-2 left-2">
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                          {image.category}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center items-center gap-4 mt-8">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0}
+                    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50 hover:bg-muted transition"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-2">
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        className={`w-8 h-8 rounded-lg transition ${
+                          currentPage === i
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border hover:bg-muted"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                    disabled={currentPage === totalPages - 1}
+                    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50 hover:bg-muted transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -143,7 +172,6 @@ export default function GalleryPage() {
                   className="w-full h-auto max-h-96 md:max-h-[70vh] object-contain"
                 />
               </div>
-              {/* Close Button */}
               <button
                 onClick={() => setSelectedImage(null)}
                 className="absolute -top-12 right-0 text-white hover:text-primary transition hover:scale-110"
@@ -156,12 +184,16 @@ export default function GalleryPage() {
                 {images.map((img) => (
                   <button
                     key={img.id}
-                    onClick={() => setSelectedImage(img.src)}
+                    onClick={() => setSelectedImage(img.image_url)}
                     className={`flex-shrink-0 h-16 w-16 rounded-lg overflow-hidden border-2 transition ${
-                      selectedImage === img.src ? "border-primary" : "border-border hover:border-primary/50"
+                      selectedImage === img.image_url ? "border-primary" : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <img src={img.src || "/placeholder.svg"} alt={img.alt} className="w-full h-full object-cover" />
+                    <img
+                      src={img.image_url || "/placeholder.svg"}
+                      alt={img.title}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -175,11 +207,6 @@ export default function GalleryPage() {
 
             {/* Swipeable Reviews Container */}
             <div className="relative mb-8">
-              {showSwipeHint && (
-                <div className="text-center mb-4 text-sm text-foreground/60">
-                  ← Swipe left or right to see more reviews →
-                </div>
-              )}
               <div className="flex gap-8 overflow-x-auto pb-4 snap-x snap-mandatory">
                 {paginatedReviews.map((review, i) => (
                   <div

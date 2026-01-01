@@ -61,6 +61,9 @@ export default function GuestDashboardPage() {
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("GCash")
+  const [referenceNumber, setReferenceNumber] = useState("")
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [submittingTopup, setSubmittingTopup] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -227,6 +230,57 @@ export default function GuestDashboardPage() {
     setSelectedRoomForTime(roomId)
     if (selectedDate) {
       fetchTimeSlots(selectedDate, roomId)
+    }
+  }
+
+  const handleTopupSubmit = async () => {
+    if (!topupAmount || !referenceNumber) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    if (!receiptFile) {
+      alert("Please upload a payment receipt")
+      return
+    }
+
+    setSubmittingTopup(true)
+
+    try {
+      // Convert file to base64 for simple storage (in production, use proper file upload service)
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64Receipt = reader.result as string
+
+        const response = await fetch("/api/top-up", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            guest_id: guestId,
+            amount: Number.parseFloat(topupAmount),
+            payment_method: paymentMethod,
+            reference_number: referenceNumber,
+            receipt_url: base64Receipt,
+          }),
+        })
+
+        if (response.ok) {
+          alert("Top-up request submitted! Waiting for admin approval.")
+          setShowTopupForm(false)
+          setTopupAmount("")
+          setReferenceNumber("")
+          setReceiptFile(null)
+          fetchTopupHistory(guestId)
+        } else {
+          alert("Failed to submit top-up request. Please try again.")
+        }
+        setSubmittingTopup(false)
+      }
+      reader.readAsDataURL(receiptFile)
+    } catch (error) {
+      console.error("[v0] Error submitting top-up:", error)
+      alert("Error submitting top-up request")
+      setSubmittingTopup(false)
     }
   }
 
@@ -411,6 +465,105 @@ export default function GuestDashboardPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Top-up Form Modal */}
+                  {showTopupForm && (
+                    <div className="bg-card border-2 border-primary rounded-xl p-6 mb-6">
+                      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <Wallet size={24} className="text-primary" />
+                        Top-up Balance
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold mb-2">Amount (₱)</label>
+                          <input
+                            type="number"
+                            value={topupAmount}
+                            onChange={(e) => setTopupAmount(e.target.value)}
+                            placeholder="Enter amount"
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                            min="100"
+                            step="100"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold mb-2">Payment Method</label>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="GCash">GCash</option>
+                            <option value="PayMaya">PayMaya</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Over the Counter">Over the Counter</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold mb-2">Reference Number</label>
+                          <input
+                            type="text"
+                            value={referenceNumber}
+                            onChange={(e) => setReferenceNumber(e.target.value)}
+                            placeholder="Enter transaction reference number"
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold mb-2">
+                            Payment Receipt (JPG, JPEG, PNG, or PDF)
+                          </label>
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                            className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                          {receiptFile && (
+                            <p className="text-sm text-green-600 mt-2">
+                              Selected: {receiptFile.name} ({(receiptFile.size / 1024).toFixed(2)} KB)
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="bg-blue-500/10 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold mb-2">
+                            Important Notes:
+                          </p>
+                          <ul className="text-xs text-foreground/70 space-y-1 list-disc list-inside">
+                            <li>Your balance will be credited after admin approval</li>
+                            <li>Please upload a clear photo or screenshot of your receipt</li>
+                            <li>Processing time: 1-24 hours</li>
+                            <li>Keep your reference number for tracking</li>
+                          </ul>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleTopupSubmit}
+                            disabled={submittingTopup}
+                            className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg hover:shadow-lg transition font-bold disabled:opacity-50"
+                          >
+                            {submittingTopup ? "Submitting..." : "Submit Top-up Request"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowTopupForm(false)
+                              setTopupAmount("")
+                              setReferenceNumber("")
+                              setReceiptFile(null)
+                            }}
+                            className="flex-1 py-3 border-2 border-border rounded-lg hover:bg-muted transition font-bold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right Column - Account Settings */}
