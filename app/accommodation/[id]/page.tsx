@@ -233,9 +233,11 @@ export default function RoomDetailPage() {
                   />
                 ))}
               </div>
-              <span className="text-lg">
-                {room.rating} ({room.reviews} reviews)
-              </span>
+              <Link href={`/rooms/${roomId}/reviews`}>
+                <span className="text-lg cursor-pointer hover:opacity-80 transition">
+                  {room.rating} ({room.reviews} reviews)
+                </span>
+              </Link>
             </div>
           </div>
         </section>

@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { X, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react"
 import { validateEmail, validateUsername, validatePassword } from "@/lib/validation"
+import { getRecaptchaKey } from "@/app/actions/get-recaptcha-key"
 
 interface GuestAuthModalProps {
   isOpen: boolean
@@ -30,32 +31,50 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState("")
 
   useEffect(() => {
-    const loadRecaptchaConfig = async () => {
-      try {
-        const response = await fetch("/api/config/recaptcha")
-        const data = await response.json()
-        if (data.siteKey) {
-          setRecaptchaSiteKey(data.siteKey)
-          // Load the reCAPTCHA script
-          const script = document.createElement("script")
-          script.src = "https://www.google.com/recaptcha/api.js?render=" + data.siteKey
-          document.head.appendChild(script)
-        }
-      } catch (err) {
-        console.error("[v0] Failed to load reCAPTCHA config:", err)
-      }
+    const loadRecaptchaKey = async () => {
+      const key = await getRecaptchaKey()
+      setRecaptchaSiteKey(key)
     }
-    loadRecaptchaConfig()
+    loadRecaptchaKey()
   }, [])
 
+  useEffect(() => {
+    // Load reCAPTCHA script if site key is available
+    if (recaptchaSiteKey && !window.grecaptcha) {
+      const script = document.createElement("script")
+      script.src = "https://www.google.com/recaptcha/api.js?render=" + recaptchaSiteKey
+      script.async = true
+      script.defer = true
+      script.onload = () => {
+        console.log("[v0] reCAPTCHA script loaded successfully")
+      }
+      script.onerror = () => {
+        console.error("[v0] Failed to load reCAPTCHA script")
+      }
+      document.head.appendChild(script)
+    }
+  }, [recaptchaSiteKey])
+
   const getRecaptchaToken = async () => {
-    if (window.grecaptcha && recaptchaSiteKey) {
+    if (!recaptchaSiteKey) {
+      console.error("[v0] reCAPTCHA site key not available")
+      return ""
+    }
+
+    if (!window.grecaptcha) {
+      console.error("[v0] reCAPTCHA not loaded yet")
+      return ""
+    }
+
+    try {
       const token = await window.grecaptcha.execute(recaptchaSiteKey, {
         action: isLogin ? "login" : "register",
       })
       return token
+    } catch (error) {
+      console.error("[v0] Failed to get reCAPTCHA token:", error)
+      return ""
     }
-    return ""
   }
 
   const validateForm = (): boolean => {
