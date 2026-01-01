@@ -2,14 +2,43 @@
 
 import type React from "react"
 import GuestAuthModal from "@/components/guest-auth-modal"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Facebook, Youtube, Mail } from "lucide-react"
+import { Facebook, Youtube, Mail, Twitter, MapPin, MessageCircle } from "lucide-react"
+
+interface SocialAccount {
+  id: string
+  platform: string
+  display_name: string
+  url: string
+  icon_name: string
+  is_enabled: boolean
+  sort_order: number
+}
 
 export default function Footer() {
   const [email, setEmail] = useState("")
   const [subscribed, setSubscribed] = useState(false)
   const [showGuestAuthModal, setShowGuestAuthModal] = useState(false)
+  const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([])
+
+  useEffect(() => {
+    fetchSocialAccounts()
+  }, [])
+
+  const fetchSocialAccounts = async () => {
+    try {
+      const response = await fetch("/api/social-accounts")
+      if (response.ok) {
+        const data = await response.json()
+        // Filter only enabled accounts and sort by sort_order
+        const enabledAccounts = data.filter((acc: SocialAccount) => acc.is_enabled)
+        setSocialAccounts(enabledAccounts)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching social accounts:", error)
+    }
+  }
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,6 +47,19 @@ export default function Footer() {
       setEmail("")
       setTimeout(() => setSubscribed(false), 2000)
     }
+  }
+
+  const getIconComponent = (iconName: string) => {
+    const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+      Facebook: Facebook,
+      Twitter: Twitter,
+      Youtube: Youtube,
+      Mail: Mail,
+      MapPin: MapPin,
+      MessageCircle: MessageCircle,
+    }
+    const IconComponent = iconMap[iconName] || Mail
+    return IconComponent
   }
 
   const socialIconClass =
@@ -123,20 +165,21 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-4">Follow Us</h4>
             <div className="flex gap-3 mb-6 flex-wrap">
-              <a href="https://facebook.com" className={socialIconClass} title="Follow us on Facebook">
-                <Facebook size={20} />
-              </a>
-              <a href="https://x.com" className={socialIconClass} title="Follow us on X">
-                <svg size={20} viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.514l-5.106-6.693-5.829 6.693h-3.307l7.713-8.835L2.25 2.25h6.514l4.882 6.479 5.288-6.479zM17.364 20.455h1.828L6.817 3.96H4.854l12.51 16.495z" />
-                </svg>
-              </a>
-              <a href="https://youtube.com" className={socialIconClass} title="Subscribe to our YouTube">
-                <Youtube size={20} />
-              </a>
-              <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
-                <Mail size={20} />
-              </a>
+              {socialAccounts.map((account) => {
+                const IconComponent = getIconComponent(account.icon_name)
+                return (
+                  <a
+                    key={account.id}
+                    href={account.url}
+                    className={socialIconClass}
+                    title={account.display_name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <IconComponent size={20} />
+                  </a>
+                )
+              })}
             </div>
 
             <div>
@@ -256,20 +299,21 @@ export default function Footer() {
           <div className="col-span-2">
             <h4 className="font-bold mb-3 text-sm">Follow Us</h4>
             <div className="flex gap-2 mb-4 flex-wrap">
-              <a href="https://facebook.com" className={socialIconClass} title="Follow us on Facebook">
-                <Facebook size={16} />
-              </a>
-              <a href="https://x.com" className={socialIconClass} title="Follow us on X">
-                <svg size={16} viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.514l-5.106-6.693-5.829 6.693h-3.307l7.713-8.835L2.25 2.25h6.514l4.882 6.479 5.288-6.479zM17.364 20.455h1.828L6.817 3.96H4.854l12.51 16.495z" />
-                </svg>
-              </a>
-              <a href="https://youtube.com" className={socialIconClass} title="Subscribe to our YouTube">
-                <Youtube size={16} />
-              </a>
-              <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
-                <Mail size={16} />
-              </a>
+              {socialAccounts.map((account) => {
+                const IconComponent = getIconComponent(account.icon_name)
+                return (
+                  <a
+                    key={account.id}
+                    href={account.url}
+                    className={socialIconClass}
+                    title={account.display_name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <IconComponent size={16} />
+                  </a>
+                )
+              })}
             </div>
 
             <div>
