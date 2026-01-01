@@ -16,6 +16,7 @@ import {
   Tag,
   FileText,
   Share2,
+  CalendarIcon,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -114,6 +115,7 @@ export default function AdminDashboard() {
     { icon: BarChart3, label: "Overview", href: "/admin-dashboard" },
     { icon: Users, label: "Guests", href: "/admin-dashboard/guests" },
     { icon: BookOpen, label: "Bookings", href: "/admin-dashboard/bookings" },
+    { icon: CalendarIcon, label: "Booking Calendar", href: "/admin-dashboard/booking-calendar" }, // Added Booking Calendar menu item
     { icon: CreditCard, label: "Payments", href: "/admin-dashboard/payments" },
     { icon: Home, label: "Accommodations", href: "/admin-dashboard/accommodations" },
     { icon: Tag, label: "Coupons", href: "/admin-dashboard/coupons" },

@@ -36,6 +36,20 @@ interface Coupon {
   usage_limit: number
 }
 
+interface RoomAvailability {
+  roomId: string
+  roomName: string
+  status: string
+  availableSlots: number
+  capacity: number
+}
+
+interface TimeSlot {
+  time: string
+  displayTime: string
+  available: boolean
+}
+
 export default function GuestDashboardPage() {
   const router = useRouter()
   const [guestEmail, setGuestEmail] = useState("")
@@ -53,6 +67,12 @@ export default function GuestDashboardPage() {
   const [topupHistory, setTopupHistory] = useState<TopupTransaction[]>([])
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [activeTab, setActiveTab] = useState("overview")
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [roomAvailability, setRoomAvailability] = useState<RoomAvailability[]>([])
+  const [selectedRoomForTime, setSelectedRoomForTime] = useState<string | null>(null)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
 
   useEffect(() => {
     const email = localStorage.getItem("guestEmail")
@@ -127,6 +147,40 @@ export default function GuestDashboardPage() {
     }
   }
 
+  const fetchRoomAvailability = async (date: Date) => {
+    setLoadingAvailability(true)
+    try {
+      const dateString = date.toISOString().split("T")[0]
+      const response = await fetch(`/api/bookings/availability?date=${dateString}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setRoomAvailability(data.availability || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching room availability:", error)
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  const fetchTimeSlots = async (date: Date, roomId: string) => {
+    setLoadingAvailability(true)
+    try {
+      const dateString = date.toISOString().split("T")[0]
+      const response = await fetch(`/api/bookings/time-slots?date=${dateString}&roomId=${roomId}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setTimeSlots(data.timeSlots || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching time slots:", error)
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem("guestId")
     localStorage.removeItem("guestEmail")
@@ -159,6 +213,21 @@ export default function GuestDashboardPage() {
       const checkOutDate = new Date(booking.check_out_date)
       return checkDate >= checkInDate && checkDate <= checkOutDate
     })
+  }
+
+  const handleDateClick = (day: number) => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+    setSelectedDate(date)
+    setSelectedRoomForTime(null)
+    setTimeSlots([])
+    fetchRoomAvailability(date)
+  }
+
+  const handleRoomTimeClick = (roomId: string) => {
+    setSelectedRoomForTime(roomId)
+    if (selectedDate) {
+      fetchTimeSlots(selectedDate, roomId)
+    }
   }
 
   return (
@@ -554,17 +623,32 @@ export default function GuestDashboardPage() {
                       .map((_, i) => {
                         const day = i + 1
                         const isBooked = isDateBooked(day)
+                        const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        const isPast = date < today
+                        const isSelected =
+                          selectedDate?.getDate() === day &&
+                          selectedDate?.getMonth() === currentMonth.getMonth() &&
+                          selectedDate?.getFullYear() === currentMonth.getFullYear()
+
                         return (
-                          <div
+                          <button
                             key={day}
+                            onClick={() => !isPast && handleDateClick(day)}
+                            disabled={isPast}
                             className={`p-3 rounded-lg text-center font-semibold cursor-pointer transition ${
-                              isBooked
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                              isPast
+                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-amber-600 text-white"
+                                  : isBooked
+                                    ? "bg-primary text-primary-foreground hover:opacity-80"
+                                    : "bg-green-500/20 text-green-600 hover:bg-green-500/30"
                             }`}
                           >
                             {day}
-                          </div>
+                          </button>
                         )
                       })}
                   </div>
@@ -572,14 +656,94 @@ export default function GuestDashboardPage() {
                   <div className="mt-6 flex gap-4 justify-center">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-green-500/20 rounded"></div>
-                      <span>Available</span>
+                      <span className="text-sm">Available</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-primary rounded"></div>
-                      <span>Booked</span>
+                      <span className="text-sm">Booked</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded"></div>
+                      <span className="text-sm">Fully Booked</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Room availability for selected date */}
+                {selectedDate && (
+                  <div className="bg-card border border-border rounded-xl p-6">
+                    <h3 className="text-xl font-bold mb-4">
+                      Room Availability for{" "}
+                      {selectedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </h3>
+
+                    {loadingAvailability ? (
+                      <div className="text-center py-8">
+                        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                        <p className="text-sm text-foreground/60">Loading availability...</p>
+                      </div>
+                    ) : roomAvailability.length > 0 ? (
+                      <div className="space-y-3">
+                        {roomAvailability.map((room) => (
+                          <button
+                            key={room.roomId}
+                            onClick={() => handleRoomTimeClick(room.roomId)}
+                            className={`w-full p-4 rounded-lg border-2 transition text-left ${
+                              selectedRoomForTime === room.roomId
+                                ? "border-primary bg-primary/10"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold">{room.roomName}</h4>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                  room.status === "available"
+                                    ? "bg-green-500 text-white"
+                                    : room.status === "booked"
+                                      ? "bg-amber-600 text-white"
+                                      : "bg-red-500 text-white"
+                                }`}
+                              >
+                                {room.status === "available"
+                                  ? "Available"
+                                  : room.status === "booked"
+                                    ? "Booked"
+                                    : "Fully Booked"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-foreground/60">
+                              {room.availableSlots} of {room.capacity} slots available
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center py-8 text-foreground/60">No rooms available for this date</p>
+                    )}
+
+                    {/* Time slots for selected room */}
+                    {selectedRoomForTime && timeSlots.length > 0 && (
+                      <div className="mt-6 pt-6 border-t border-border">
+                        <h4 className="font-semibold mb-4">Available Time Slots (GMT+8 Manila Time)</h4>
+                        <div className="grid grid-cols-4 gap-2">
+                          {timeSlots.map((slot) => (
+                            <div
+                              key={slot.time}
+                              className={`p-2 rounded-lg text-center text-sm font-medium ${
+                                slot.available
+                                  ? "bg-green-500/20 text-green-600"
+                                  : "bg-red-500/20 text-red-600 line-through"
+                              }`}
+                            >
+                              {slot.displayTime}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
