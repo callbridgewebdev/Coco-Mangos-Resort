@@ -15,7 +15,6 @@ export const validateUsername = (username: string): { valid: boolean; error?: st
   return { valid: true }
 }
 
-// Password validation - minimum 8 characters, 1 number, 1 special character
 export const validatePassword = (password: string): { valid: boolean; error?: string } => {
   if (password.length < 8) {
     return { valid: false, error: "Password must be at least 8 characters" }
@@ -25,6 +24,16 @@ export const validatePassword = (password: string): { valid: boolean; error?: st
   }
   if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     return { valid: false, error: "Password must contain at least 1 special character (!@#$%^&*, etc.)" }
+  }
+  return { valid: true }
+}
+
+export const validatePasswordMatch = (
+  password: string,
+  confirmPassword: string,
+): { valid: boolean; error?: string } => {
+  if (password !== confirmPassword) {
+    return { valid: false, error: "Passwords do not match" }
   }
   return { valid: true }
 }

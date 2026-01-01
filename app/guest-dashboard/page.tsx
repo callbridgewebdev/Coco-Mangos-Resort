@@ -1,28 +1,39 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { Wallet, Home, LogOut, History, ChevronLeft, ChevronRight, Tag, Zap } from "lucide-react"
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
 import BookingModalPopup from "@/components/booking-modal-popup"
-import { Wallet, Gift, LogOut, CreditCard, TrendingUp, Home, History } from "lucide-react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Booking {
   id: string
-  room_id: string
   room_name: string
-  total_price: number
   check_in_date: string
   check_out_date: string
-  status: "confirmed" | "completed" | "cancelled"
+  total_price: number
+  status: string
 }
 
 interface TopupTransaction {
   id: string
   amount: number
-  created_at: string
   payment_method: string
+  status: string
+  created_at: string
+}
+
+interface Coupon {
+  id: string
+  code: string
+  coupon_type: string
+  discount_percentage: number
+  discount_amount: number
+  expiration_date: string
+  is_locked: boolean
+  usage_count: number
+  usage_limit: number
 }
 
 export default function GuestDashboardPage() {
@@ -40,6 +51,7 @@ export default function GuestDashboardPage() {
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [topupHistory, setTopupHistory] = useState<TopupTransaction[]>([])
+  const [coupons, setCoupons] = useState<Coupon[]>([])
   const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
@@ -56,6 +68,7 @@ export default function GuestDashboardPage() {
     fetchGuestData(id)
     fetchBookings(id)
     fetchTopupHistory(id)
+    fetchAvailableCoupons()
   }, [router])
 
   const fetchGuestData = async (id: string) => {
@@ -96,42 +109,39 @@ export default function GuestDashboardPage() {
     }
   }
 
-  const handleTopup = async () => {
-    const amount = Number.parseFloat(topupAmount)
-    if (amount <= 0) return
-
+  const fetchAvailableCoupons = async () => {
     try {
-      const newBalance = balance + amount
-
-      // Create top-up transaction
-      await fetch("/api/top-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          guest_id: guestId,
-          amount: amount,
-          payment_method: paymentMethod,
-          status: "pending",
-          new_balance: newBalance,
-        }),
-      })
-
-      setBalance(newBalance)
-      setTopupAmount("")
-      setShowTopupForm(false)
-      fetchTopupHistory(guestId)
+      const response = await fetch("/api/coupons")
+      if (response.ok) {
+        const data = await response.json()
+        // Filter available and unlocked coupons
+        const availableCoupons = data.filter((c: Coupon) => {
+          const isExpired = new Date(c.expiration_date) < new Date()
+          const isLimitReached = c.usage_count >= c.usage_limit
+          return !isExpired && !isLimitReached
+        })
+        setCoupons(availableCoupons)
+      }
     } catch (error) {
-      console.error("[v0] Error processing top-up:", error)
+      console.error("[v0] Error fetching coupons:", error)
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("guestEmail")
     localStorage.removeItem("guestId")
-    localStorage.removeItem("guestBalance")
-    localStorage.removeItem("guestName")
-    localStorage.removeItem("guestPhone")
+    localStorage.removeItem("guestEmail")
+    localStorage.removeItem("guestUsername")
+    localStorage.removeItem("rememberMeToken")
+    localStorage.removeItem("rememberMe")
     router.push("/")
+  }
+
+  const previousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
   }
 
   const getDaysInMonth = (date: Date) => {
@@ -142,58 +152,13 @@ export default function GuestDashboardPage() {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
   }
 
-  const isBookingDate = (day: number) => {
-    const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toISOString().split("T")[0]
+  const isDateBooked = (day: number) => {
+    const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     return bookings.some((booking) => {
-      return checkDate >= booking.check_in_date && checkDate <= booking.check_out_date
+      const checkInDate = new Date(booking.check_in_date)
+      const checkOutDate = new Date(booking.check_out_date)
+      return checkDate >= checkInDate && checkDate <= checkOutDate
     })
-  }
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentMonth)
-    const firstDay = getFirstDayOfMonth(currentMonth)
-    const days = []
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="p-2 text-center text-foreground/30"></div>)
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isBooked = isBookingDate(day)
-      const relatedBooking = bookings.find((booking) => {
-        const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toISOString().split("T")[0]
-        return checkDate >= booking.check_in_date && checkDate <= booking.check_out_date
-      })
-
-      days.push(
-        <button
-          key={day}
-          onClick={() => {
-            if (relatedBooking) {
-              setSelectedBooking(relatedBooking)
-              setShowBookingModal(true)
-            }
-          }}
-          className={`p-2 text-center rounded-lg text-sm font-semibold transition ${
-            isBooked
-              ? "bg-primary text-primary-foreground cursor-pointer hover:shadow-lg"
-              : "bg-green-500/20 text-green-700 hover:bg-green-500/30 cursor-pointer"
-          }`}
-        >
-          {day}
-        </button>,
-      )
-    }
-
-    return days
-  }
-
-  const previousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
-  }
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
   }
 
   return (
@@ -210,7 +175,7 @@ export default function GuestDashboardPage() {
         </section>
 
         {/* Dashboard Navigation Tabs */}
-        <section className="section-padding border-b border-border sticky top-20 bg-background/95 backdrop-blur">
+        <section className="section-padding border-b border-border sticky top-20 bg-background/95 backdrop-blur z-40">
           <div className="section-max-width flex gap-4 overflow-x-auto">
             <button
               onClick={() => setActiveTab("overview")}
@@ -231,6 +196,16 @@ export default function GuestDashboardPage() {
               }`}
             >
               My Bookings
+            </button>
+            <button
+              onClick={() => setActiveTab("coupons")}
+              className={`px-4 py-2 rounded-lg font-semibold transition whitespace-nowrap ${
+                activeTab === "coupons"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
+            >
+              Available Coupons
             </button>
             <button
               onClick={() => setActiveTab("calendar")}
@@ -265,7 +240,7 @@ export default function GuestDashboardPage() {
                 <div className="md:col-span-2 space-y-6">
                   {/* Balance Card */}
                   <div className="bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary rounded-xl p-8">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between">
                       <div>
                         <p className="text-foreground/70 text-sm mb-2">Account Balance</p>
                         <div className="flex items-baseline gap-2">
@@ -280,101 +255,25 @@ export default function GuestDashboardPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <button
                       onClick={() => setShowTopupForm(!showTopupForm)}
-                      className="p-6 bg-card border-2 border-border rounded-xl hover:border-primary transition text-center"
+                      className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:shadow-lg transition flex items-center justify-center gap-2"
                     >
-                      <CreditCard size={32} className="text-secondary mx-auto mb-2" />
-                      <p className="font-bold">Add Balance</p>
-                      <p className="text-sm text-foreground/60">Top-up your account</p>
+                      <Wallet size={20} /> Top-up Balance
                     </button>
-
                     <button
-                      onClick={() => router.push("/coupons")}
-                      className="p-6 bg-card border-2 border-border rounded-xl hover:border-primary transition text-center"
+                      onClick={() => router.push("/accommodation")}
+                      className="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-bold hover:shadow-lg transition flex items-center justify-center gap-2"
                     >
-                      <Gift size={32} className="text-secondary mx-auto mb-2" />
-                      <p className="font-bold">View Coupons</p>
-                      <p className="text-sm text-foreground/60">Available offers</p>
+                      <Home size={20} /> Book a Room
                     </button>
                   </div>
 
-                  {/* Top-up Form */}
-                  {showTopupForm && (
-                    <div className="bg-card border-2 border-primary rounded-xl p-6">
-                      <h3 className="text-xl font-bold mb-4">Add Balance</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold mb-2">Amount (₱)</label>
-                          <input
-                            type="number"
-                            value={topupAmount}
-                            onChange={(e) => setTopupAmount(e.target.value)}
-                            placeholder="Enter amount"
-                            className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <p className="text-sm text-foreground/70">Quick amounts:</p>
-                          <div className="flex gap-2 flex-wrap">
-                            {[1500, 3000, 7500, 10000, 15000, 20000].map((amt) => (
-                              <button
-                                key={amt}
-                                onClick={() => setTopupAmount(amt.toString())}
-                                className="px-4 py-2 bg-muted rounded-lg hover:bg-primary hover:text-primary-foreground transition text-sm font-semibold"
-                              >
-                                ₱{amt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <p className="text-sm text-foreground/70">Payment Method:</p>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { name: "GCash", icon: "💚" },
-                              { name: "PayMaya", icon: "💙" },
-                              { name: "Bank", icon: "🏦" },
-                            ].map((method) => (
-                              <button
-                                key={method.name}
-                                onClick={() => setPaymentMethod(method.name)}
-                                className={`p-3 bg-muted rounded-lg hover:bg-primary hover:text-primary-foreground transition text-center text-xs font-semibold ${
-                                  paymentMethod === method.name ? "bg-primary text-primary-foreground" : ""
-                                }`}
-                              >
-                                <span className="text-xl block mb-1">{method.icon}</span>
-                                {method.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <button
-                            onClick={handleTopup}
-                            className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-lg font-bold hover:shadow-lg transition"
-                          >
-                            Confirm Top-up
-                          </button>
-                          <button
-                            onClick={() => setShowTopupForm(false)}
-                            className="flex-1 py-3 border-2 border-border rounded-lg font-bold hover:bg-muted transition"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Recent Activity */}
+                  {/* Recent Bookings */}
                   <div className="bg-card border border-border rounded-xl p-6">
                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                      <TrendingUp size={24} className="text-secondary" />
-                      Recent Activity
+                      <Home size={24} className="text-secondary" />
+                      Recent Bookings
                     </h3>
-                    {bookings.length > 0 ? (
+                    {bookings.slice(0, 3).length > 0 ? (
                       <div className="space-y-3">
                         {bookings.slice(0, 3).map((booking) => (
                           <div key={booking.id} className="p-3 bg-muted/50 rounded-lg border border-border">
@@ -406,23 +305,31 @@ export default function GuestDashboardPage() {
 
                 {/* Right Column - Account Settings */}
                 <div>
-                  <div className="bg-card border border-border rounded-xl p-6 sticky top-24">
-                    <h3 className="text-xl font-bold mb-4">Account Settings</h3>
+                  <div className="bg-card border border-border rounded-xl p-6 sticky top-32">
+                    <h3 className="text-xl font-bold mb-4">Quick Links</h3>
 
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <p className="text-xs text-foreground/60 mb-1">Email</p>
-                        <p className="font-semibold text-foreground">{guestEmail}</p>
-                      </div>
+                    <div className="space-y-3 mb-6">
+                      <button
+                        onClick={() => setActiveTab("coupons")}
+                        className="w-full p-3 bg-amber-500/20 text-amber-600 rounded-lg hover:bg-amber-500/30 transition font-semibold flex items-center gap-2"
+                      >
+                        <Tag size={18} /> View Available Coupons
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("bookings")}
+                        className="w-full p-3 bg-blue-500/20 text-blue-600 rounded-lg hover:bg-blue-500/30 transition font-semibold flex items-center gap-2"
+                      >
+                        <Home size={18} /> My Bookings
+                      </button>
+                    </div>
 
-                      <div className="p-4 bg-blue-500/10 border border-blue-200 dark:border-blue-900 rounded-lg text-sm">
-                        <p className="font-semibold text-blue-600 dark:text-blue-400 mb-2">Pro Tips:</p>
-                        <ul className="text-xs text-foreground/70 space-y-1 list-disc list-inside">
-                          <li>Keep balance updated for instant checkout</li>
-                          <li>Unlock coupons for exclusive discounts</li>
-                          <li>Check for seasonal offers</li>
-                        </ul>
-                      </div>
+                    <div className="p-4 bg-blue-500/10 border border-blue-200 dark:border-blue-900 rounded-lg text-sm mb-6">
+                      <p className="font-semibold text-blue-600 dark:text-blue-400 mb-2">Pro Tips:</p>
+                      <ul className="text-xs text-foreground/70 space-y-1 list-disc list-inside">
+                        <li>Check available coupons for discounts</li>
+                        <li>Maintain balance for faster checkout</li>
+                        <li>View booking calendar anytime</li>
+                      </ul>
                     </div>
 
                     <button
@@ -481,11 +388,9 @@ export default function GuestDashboardPage() {
                           </div>
                         </div>
 
-                        <div className="flex gap-3">
-                          <button className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg hover:shadow-lg transition font-semibold">
-                            View Details Receipt
-                          </button>
-                        </div>
+                        <button className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:shadow-lg transition font-semibold">
+                          View Details Receipt
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -497,6 +402,75 @@ export default function GuestDashboardPage() {
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:shadow-lg transition"
                     >
                       Browse Accommodations →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Available Coupons Tab */}
+            {activeTab === "coupons" && (
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold flex items-center gap-2">
+                  <Tag size={32} className="text-secondary" />
+                  Available Coupons & Discounts
+                </h2>
+
+                {coupons.length > 0 ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {coupons.map((coupon) => {
+                      const daysLeft = Math.ceil(
+                        (new Date(coupon.expiration_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+                      )
+                      const availableUses = coupon.usage_limit - coupon.usage_count
+
+                      return (
+                        <div
+                          key={coupon.id}
+                          className="bg-card border-2 border-primary rounded-xl p-6 relative overflow-hidden"
+                        >
+                          <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
+                            {coupon.discount_percentage > 0
+                              ? `${coupon.discount_percentage}% OFF`
+                              : `₱${coupon.discount_amount} OFF`}
+                          </div>
+
+                          <div className="mb-4">
+                            <p className="text-xs text-foreground/60 mb-1">Coupon Code</p>
+                            <p className="text-2xl font-bold text-primary font-mono">{coupon.code}</p>
+                          </div>
+
+                          <div className="space-y-2 mb-4 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-foreground/70">Type:</span>
+                              <span className="font-semibold">{coupon.coupon_type}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-foreground/70">Availability:</span>
+                              <span className="font-semibold text-green-600">{availableUses} left</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-foreground/70">Expires in:</span>
+                              <span className="font-semibold text-orange-600">{daysLeft} days</span>
+                            </div>
+                          </div>
+
+                          <button className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:shadow-lg transition font-semibold flex items-center justify-center gap-2">
+                            <Zap size={18} /> Copy Code
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-card border border-border rounded-xl">
+                    <Tag size={48} className="mx-auto text-foreground/30 mb-4" />
+                    <p className="text-foreground/60 mb-4">No available coupons at the moment</p>
+                    <button
+                      onClick={() => router.push("/coupons")}
+                      className="text-primary hover:text-secondary font-semibold transition"
+                    >
+                      View all offers →
                     </button>
                   </div>
                 )}
@@ -520,24 +494,48 @@ export default function GuestDashboardPage() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2 mb-2">
+                  <div className="grid grid-cols-7 gap-2 mb-4">
                     {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                      <div key={day} className="text-center font-semibold text-foreground/60 text-sm p-2">
+                      <div key={day} className="text-center font-bold text-foreground/60 py-2">
                         {day}
                       </div>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2">{renderCalendar()}</div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {Array(getFirstDayOfMonth(currentMonth))
+                      .fill(null)
+                      .map((_, i) => (
+                        <div key={`empty-${i}`} />
+                      ))}
+                    {Array(getDaysInMonth(currentMonth))
+                      .fill(null)
+                      .map((_, i) => {
+                        const day = i + 1
+                        const isBooked = isDateBooked(day)
+                        return (
+                          <div
+                            key={day}
+                            className={`p-3 rounded-lg text-center font-semibold cursor-pointer transition ${
+                              isBooked
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                            }`}
+                          >
+                            {day}
+                          </div>
+                        )
+                      })}
+                  </div>
 
-                  <div className="mt-6 flex gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-primary rounded"></div>
-                      <span>Booked</span>
-                    </div>
+                  <div className="mt-6 flex gap-4 justify-center">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-green-500/20 rounded"></div>
                       <span>Available</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-primary rounded"></div>
+                      <span>Booked</span>
                     </div>
                   </div>
                 </div>
@@ -571,7 +569,7 @@ export default function GuestDashboardPage() {
                             <td className="px-6 py-4">{transaction.payment_method}</td>
                             <td className="px-6 py-4">
                               <span className="px-3 py-1 bg-green-500/20 text-green-600 rounded-full text-sm font-semibold">
-                                Approved
+                                {transaction.status}
                               </span>
                             </td>
                           </tr>

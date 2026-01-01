@@ -15,6 +15,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     username: "",
     fullName: "",
     phone: "",
@@ -73,6 +74,10 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
       const passwordValidation = validatePassword(formData.password)
       if (!passwordValidation.valid) {
         errors.password = passwordValidation.error
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match"
       }
 
       if (!formData.fullName.trim()) {
@@ -261,6 +266,28 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
               )}
             </div>
 
+            {/* Confirm Password */}
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-semibold mb-2">Confirm Password *</label>
+                <div className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg bg-muted/30">
+                  <Lock size={18} className="text-secondary" />
+                  <input
+                    type="password"
+                    value={formData.confirmPassword || ""}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    placeholder="••••••••"
+                    className="flex-1 bg-transparent outline-none text-foreground"
+                  />
+                </div>
+                {validationErrors.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle size={14} /> {validationErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Remember Me & Agree to Terms */}
             {!isLogin && (
               <div className="space-y-3">
@@ -333,6 +360,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
                   setFormData({
                     email: "",
                     password: "",
+                    confirmPassword: "",
                     username: "",
                     fullName: "",
                     phone: "",
