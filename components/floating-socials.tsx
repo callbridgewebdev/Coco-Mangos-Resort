@@ -1,6 +1,6 @@
 "use client"
 
-import { Facebook, Youtube, Linkedin } from "lucide-react"
+import { Facebook, Youtube } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -73,15 +73,6 @@ export default function FloatingSocials() {
             />
           </svg>
         </a>
-        <Link
-          href="https://linkedin.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-3 bg-secondary text-secondary-foreground rounded-full hover:opacity-80 transition-all hover:scale-110 shadow-lg"
-          aria-label="LinkedIn"
-        >
-          <Linkedin size={20} />
-        </Link>
         <button
           onClick={() => setShowWhatsAppModal(true)}
           className="p-3 bg-green-500 text-white rounded-full hover:opacity-80 transition-all hover:scale-110 shadow-lg"

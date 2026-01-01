@@ -131,21 +131,26 @@ export default function RootLayout({
                 if (typeof google !== 'undefined' && google.translate) {
                   new google.translate.TranslateElement({
                     pageLanguage: 'en',
-                    includedLanguages: 'en,zh-CN,hi,es,ar,fr,bn,pt,ru,id,ur,de,ja,ha,mr,vi,te,tr,sw,tl,ta,yue,fa,ko,th,jv,it,gu,am,kn,uk,pl,ms,ro,nl,el,cs,sv,he,hu',
+                    includedLanguages: 'en,zh-CN,zh-TW,hi,es,ar,fr,bn,pt,ru,id,ur,de,ja,ha,mr,vi,te,tr,sw,tl,ta,yue,fa,ko,th,jv,it,gu,am,kn,uk,pl,ms,ro,nl,el,cs,sv,he,hu,da,fi,no,sk,sl,bg,hr,et,lt,lv,ga,mt,cy,sq,mk,is',
                     layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                     autoDisplay: true
                   }, 'google-translate-element');
-                  document.documentElement.lang = 'en';
+                  const userLanguage = navigator.language || navigator.userLanguage || 'en';
+                  document.documentElement.lang = userLanguage.split('-')[0];
                 }
               };
               
-              setTimeout(() => {
+              const initTranslate = function() {
                 if (document.readyState === 'complete' || document.readyState === 'interactive') {
                   window.googleTranslateElementInit();
                 } else {
-                  document.addEventListener('DOMContentLoaded', window.googleTranslateElementInit);
+                  document.addEventListener('DOMContentLoaded', function() {
+                    window.googleTranslateElementInit();
+                  });
                 }
-              }, 1500);
+              };
+              
+              setTimeout(initTranslate, 1000);
             `,
           }}
         />

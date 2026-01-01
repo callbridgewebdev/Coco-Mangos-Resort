@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Facebook, Youtube, Mail, Linkedin } from "lucide-react"
+import { Facebook, Youtube, Mail } from "lucide-react"
 
 export default function Footer() {
   const [email, setEmail] = useState("")
@@ -125,9 +125,6 @@ export default function Footer() {
               </a>
               <a href="https://www.kayak.com" className={socialIconClass} title="Follow us on Kayak">
                 <img src="/social-logos/kayak.jpg" alt="Kayak" className="w-full h-full object-contain" />
-              </a>
-              <a href="https://linkedin.com" className={socialIconClass} title="Connect on LinkedIn">
-                <Linkedin size={20} />
               </a>
               <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
                 <Mail size={20} />
@@ -254,9 +251,6 @@ export default function Footer() {
               </a>
               <a href="https://www.kayak.com" className={socialIconClass} title="Follow us on Kayak">
                 <img src="/social-logos/kayak.jpg" alt="Kayak" className="w-full h-full object-contain" />
-              </a>
-              <a href="https://linkedin.com" className={socialIconClass} title="Connect on LinkedIn">
-                <Linkedin size={16} />
               </a>
               <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
                 <Mail size={16} />
