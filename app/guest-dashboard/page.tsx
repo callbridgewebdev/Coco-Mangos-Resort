@@ -10,31 +10,33 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Booking {
   id: string
-  roomId: string
-  roomName: string
-  price: number
-  checkInDate: string
-  checkOutDate: string
+  room_id: string
+  room_name: string
+  total_price: number
+  check_in_date: string
+  check_out_date: string
   status: "confirmed" | "completed" | "cancelled"
 }
 
 interface TopupTransaction {
   id: string
   amount: number
-  date: string
-  paymentMethod: string
+  created_at: string
+  payment_method: string
 }
 
 export default function GuestDashboardPage() {
   const router = useRouter()
   const [guestEmail, setGuestEmail] = useState("")
+  const [guestId, setGuestId] = useState("")
   const [balance, setBalance] = useState(0)
   const [topupAmount, setTopupAmount] = useState("")
   const [showTopupForm, setShowTopupForm] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("Card") // New state for payment method
+  const [paymentMethod, setPaymentMethod] = useState("GCash")
+  const [loading, setLoading] = useState(true)
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [topupHistory, setTopupHistory] = useState<TopupTransaction[]>([])
@@ -42,73 +44,93 @@ export default function GuestDashboardPage() {
 
   useEffect(() => {
     const email = localStorage.getItem("guestEmail")
-    const savedBalance = localStorage.getItem("guestBalance")
-    const savedBookings = localStorage.getItem("guestBookings")
-    const savedTopupHistory = localStorage.getItem("topupHistory")
+    const id = localStorage.getItem("guestId")
 
-    if (!email) {
+    if (!email || !id) {
       router.push("/")
       return
     }
 
     setGuestEmail(email)
-    setBalance(Number.parseFloat(savedBalance || "0"))
-
-    if (savedBookings) {
-      setBookings(JSON.parse(savedBookings))
-    }
-
-    if (savedTopupHistory) {
-      setTopupHistory(JSON.parse(savedTopupHistory))
-    }
-
-    const lastBookedRoom = localStorage.getItem("lastBookedRoom")
-    if (lastBookedRoom) {
-      const roomData = JSON.parse(lastBookedRoom)
-      const newBooking: Booking = {
-        id: `booking-${Date.now()}`,
-        roomId: roomData.roomId,
-        roomName: roomData.roomName,
-        price: roomData.price,
-        checkInDate: new Date().toISOString().split("T")[0],
-        checkOutDate: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        status: "confirmed",
-      }
-      const updatedBookings = [newBooking, ...(savedBookings ? JSON.parse(savedBookings) : [])]
-      setBookings(updatedBookings)
-      localStorage.setItem("guestBookings", JSON.stringify(updatedBookings))
-      localStorage.removeItem("lastBookedRoom")
-    }
+    setGuestId(id)
+    fetchGuestData(id)
+    fetchBookings(id)
+    fetchTopupHistory(id)
   }, [router])
 
-  const handleTopup = () => {
-    const amount = Number.parseFloat(topupAmount)
-    if (amount > 0) {
-      const newBalance = balance + amount
-      setBalance(newBalance)
-      localStorage.setItem("guestBalance", newBalance.toString())
-
-      const newTransaction: TopupTransaction = {
-        id: `txn-${Date.now()}`,
-        amount: amount,
-        date: new Date().toLocaleDateString(),
-        paymentMethod: paymentMethod, // Use the selected payment method
+  const fetchGuestData = async (id: string) => {
+    try {
+      const response = await fetch(`/api/guests/${id}`)
+      if (response.ok) {
+        const guest = await response.json()
+        setBalance(guest.account_balance || 0)
       }
-      const updatedHistory = [newTransaction, ...topupHistory]
-      setTopupHistory(updatedHistory)
-      localStorage.setItem("topupHistory", JSON.stringify(updatedHistory))
+    } catch (error) {
+      console.error("[v0] Error fetching guest data:", error)
+    }
+  }
 
+  const fetchBookings = async (id: string) => {
+    try {
+      const response = await fetch(`/api/bookings?guest_id=${id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setBookings(data)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching bookings:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchTopupHistory = async (id: string) => {
+    try {
+      const response = await fetch(`/api/top-up?guest_id=${id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTopupHistory(data)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching top-up history:", error)
+    }
+  }
+
+  const handleTopup = async () => {
+    const amount = Number.parseFloat(topupAmount)
+    if (amount <= 0) return
+
+    try {
+      const newBalance = balance + amount
+
+      // Create top-up transaction
+      await fetch("/api/top-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guest_id: guestId,
+          amount: amount,
+          payment_method: paymentMethod,
+          status: "pending",
+          new_balance: newBalance,
+        }),
+      })
+
+      setBalance(newBalance)
       setTopupAmount("")
       setShowTopupForm(false)
+      fetchTopupHistory(guestId)
+    } catch (error) {
+      console.error("[v0] Error processing top-up:", error)
     }
   }
 
   const handleLogout = () => {
     localStorage.removeItem("guestEmail")
+    localStorage.removeItem("guestId")
     localStorage.removeItem("guestBalance")
     localStorage.removeItem("guestName")
     localStorage.removeItem("guestPhone")
-    localStorage.removeItem("guestBookings")
     router.push("/")
   }
 
@@ -123,7 +145,7 @@ export default function GuestDashboardPage() {
   const isBookingDate = (day: number) => {
     const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toISOString().split("T")[0]
     return bookings.some((booking) => {
-      return checkDate >= booking.checkInDate && checkDate <= booking.checkOutDate
+      return checkDate >= booking.check_in_date && checkDate <= booking.check_out_date
     })
   }
 
@@ -140,7 +162,7 @@ export default function GuestDashboardPage() {
       const isBooked = isBookingDate(day)
       const relatedBooking = bookings.find((booking) => {
         const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toISOString().split("T")[0]
-        return checkDate >= booking.checkInDate && checkDate <= booking.checkOutDate
+        return checkDate >= booking.check_in_date && checkDate <= booking.check_out_date
       })
 
       days.push(
@@ -358,12 +380,12 @@ export default function GuestDashboardPage() {
                           <div key={booking.id} className="p-3 bg-muted/50 rounded-lg border border-border">
                             <div className="flex justify-between items-start">
                               <div>
-                                <p className="font-semibold">{booking.roomName}</p>
+                                <p className="font-semibold">{booking.room_name}</p>
                                 <p className="text-sm text-foreground/60">
-                                  {booking.checkInDate} to {booking.checkOutDate}
+                                  {booking.check_in_date} to {booking.check_out_date}
                                 </p>
                               </div>
-                              <span className="text-primary font-bold">₱{booking.price}</span>
+                              <span className="text-primary font-bold">₱{booking.total_price}</span>
                             </div>
                           </div>
                         ))}
@@ -427,7 +449,7 @@ export default function GuestDashboardPage() {
                           <div>
                             <h3 className="text-2xl font-bold flex items-center gap-2">
                               <Home size={24} className="text-secondary" />
-                              {booking.roomName}
+                              {booking.room_name}
                             </h3>
                             <p className="text-sm text-foreground/60 mt-1">Booking ID: {booking.id}</p>
                           </div>
@@ -447,24 +469,21 @@ export default function GuestDashboardPage() {
                         <div className="grid md:grid-cols-3 gap-4 mb-4 p-4 bg-muted/30 rounded-lg">
                           <div>
                             <p className="text-xs text-foreground/60 mb-1">Check-in</p>
-                            <p className="font-bold">{booking.checkInDate}</p>
+                            <p className="font-bold">{booking.check_in_date}</p>
                           </div>
                           <div>
                             <p className="text-xs text-foreground/60 mb-1">Check-out</p>
-                            <p className="font-bold">{booking.checkOutDate}</p>
+                            <p className="font-bold">{booking.check_out_date}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-foreground/60 mb-1">Price</p>
-                            <p className="font-bold text-primary">₱{booking.price}</p>
+                            <p className="text-xs text-foreground/60 mb-1">Total</p>
+                            <p className="font-bold text-primary">₱{booking.total_price}</p>
                           </div>
                         </div>
 
                         <div className="flex gap-3">
-                          <button className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:shadow-lg transition">
-                            View Details
-                          </button>
-                          <button className="flex-1 py-2 border-2 border-border rounded-lg font-semibold hover:bg-muted transition">
-                            Modify Booking
+                          <button className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg hover:shadow-lg transition font-semibold">
+                            View Details Receipt
                           </button>
                         </div>
                       </div>
@@ -472,13 +491,12 @@ export default function GuestDashboardPage() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <Home size={64} className="text-muted mx-auto mb-4 opacity-30" />
                     <p className="text-foreground/60 mb-4">No bookings yet</p>
                     <button
                       onClick={() => router.push("/accommodation")}
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:shadow-lg transition"
                     >
-                      Browse Rooms
+                      Browse Accommodations →
                     </button>
                   </div>
                 )}
@@ -491,20 +509,20 @@ export default function GuestDashboardPage() {
                 <h2 className="text-3xl font-bold">Booking Calendar</h2>
                 <div className="bg-card border border-border rounded-xl p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <button onClick={previousMonth} className="p-2 hover:bg-muted rounded-lg transition">
+                    <button onClick={previousMonth} className="p-2 hover:bg-muted rounded-lg">
                       <ChevronLeft size={24} />
                     </button>
                     <h3 className="text-2xl font-bold">
-                      {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                      {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}
                     </h3>
-                    <button onClick={nextMonth} className="p-2 hover:bg-muted rounded-lg transition">
+                    <button onClick={nextMonth} className="p-2 hover:bg-muted rounded-lg">
                       <ChevronRight size={24} />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2 mb-4">
+                  <div className="grid grid-cols-7 gap-2 mb-2">
                     {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                      <div key={day} className="text-center font-bold text-foreground/60 p-2">
+                      <div key={day} className="text-center font-semibold text-foreground/60 text-sm p-2">
                         {day}
                       </div>
                     ))}
@@ -515,11 +533,11 @@ export default function GuestDashboardPage() {
                   <div className="mt-6 flex gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-primary rounded"></div>
-                      <span>Booked Dates</span>
+                      <span>Booked</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-green-500/20 rounded border border-green-500"></div>
-                      <span>Available Dates</span>
+                      <div className="w-4 h-4 bg-green-500/20 rounded"></div>
+                      <span>Available</span>
                     </div>
                   </div>
                 </div>
@@ -529,77 +547,53 @@ export default function GuestDashboardPage() {
             {/* History Tab */}
             {activeTab === "history" && (
               <div className="space-y-6">
-                <h2 className="text-3xl font-bold">Transaction History</h2>
+                <h2 className="text-3xl font-bold flex items-center gap-2">
+                  <History size={32} className="text-secondary" />
+                  Transaction History
+                </h2>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Top-up History */}
-                  <div className="bg-card border border-border rounded-xl p-6">
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                      <CreditCard size={24} className="text-secondary" />
-                      Top-up History
-                    </h3>
-                    {topupHistory.length > 0 ? (
-                      <div className="space-y-3">
+                {topupHistory.length > 0 ? (
+                  <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted border-b border-border">
+                        <tr>
+                          <th className="px-6 py-3 text-left font-bold">Date</th>
+                          <th className="px-6 py-3 text-left font-bold">Amount</th>
+                          <th className="px-6 py-3 text-left font-bold">Payment Method</th>
+                          <th className="px-6 py-3 text-left font-bold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {topupHistory.map((transaction) => (
-                          <div
-                            key={transaction.id}
-                            className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-semibold">{transaction.paymentMethod}</p>
-                              <p className="text-xs text-foreground/60">{transaction.date}</p>
-                            </div>
-                            <p className="font-bold text-green-600">+₱{transaction.amount.toFixed(2)}</p>
-                          </div>
+                          <tr key={transaction.id} className="border-b border-border hover:bg-muted/30">
+                            <td className="px-6 py-4">{new Date(transaction.created_at).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 font-bold text-green-600">+₱{transaction.amount}</td>
+                            <td className="px-6 py-4">{transaction.payment_method}</td>
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-green-500/20 text-green-600 rounded-full text-sm font-semibold">
+                                Approved
+                              </span>
+                            </td>
+                          </tr>
                         ))}
-                      </div>
-                    ) : (
-                      <p className="text-center text-foreground/60 py-8">No top-ups yet</p>
-                    )}
+                      </tbody>
+                    </table>
                   </div>
-
-                  {/* Payment History */}
-                  <div className="bg-card border border-border rounded-xl p-6">
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                      <History size={24} className="text-secondary" />
-                      Payment History
-                    </h3>
-                    {bookings.filter((b) => b.status === "completed").length > 0 ? (
-                      <div className="space-y-3">
-                        {bookings
-                          .filter((b) => b.status === "completed")
-                          .map((booking) => (
-                            <div
-                              key={booking.id}
-                              className="flex justify-between items-center p-3 bg-muted/30 rounded-lg"
-                            >
-                              <div>
-                                <p className="font-semibold">{booking.roomName}</p>
-                                <p className="text-xs text-foreground/60">{booking.checkInDate}</p>
-                              </div>
-                              <p className="font-bold text-red-600">-₱{booking.price.toFixed(2)}</p>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="text-center text-foreground/60 py-8">No payments yet</p>
-                    )}
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-foreground/60">No transaction history yet</p>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
         </section>
       </main>
 
-      {/* Booking Modal Popup */}
-      <BookingModalPopup
-        isOpen={showBookingModal}
-        onClose={() => setShowBookingModal(false)}
-        booking={selectedBooking}
-      />
-
       <MobileNav />
+      {showBookingModal && selectedBooking && (
+        <BookingModalPopup booking={selectedBooking} onClose={() => setShowBookingModal(false)} />
+      )}
     </div>
   )
 }
