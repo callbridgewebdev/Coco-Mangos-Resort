@@ -4,7 +4,6 @@ import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
 import { useState } from "react"
 import { X, Star, ChevronLeft, ChevronRight } from "lucide-react"
-import Footer from "@/components/footer"
 
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
@@ -239,7 +238,6 @@ export default function GalleryPage() {
       </main>
 
       <MobileNav />
-      <Footer />
     </div>
   )
 }

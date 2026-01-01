@@ -7,6 +7,7 @@ import "./globals.css"
 import FooterComponent from "@/components/footer"
 import FloatingSocials from "@/components/floating-socials"
 import PWAInstallPrompt from "@/components/pwa-install-prompt"
+import CookieConsent from "@/components/cookie-consent"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -106,7 +107,7 @@ export default function RootLayout({
               
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js?v=' + Date.now(), { 
+                  navigator.serviceWorker.register('/api/sw?v=' + Date.now(), { 
                     scope: '/',
                     updateViaCache: 'none'
                   })
@@ -134,20 +135,17 @@ export default function RootLayout({
                     layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                     autoDisplay: true
                   }, 'google-translate-element');
+                  document.documentElement.lang = 'en';
                 }
               };
               
               setTimeout(() => {
-                if (document.readyState === 'complete') {
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
                   window.googleTranslateElementInit();
                 } else {
-                  document.addEventListener('readystatechange', () => {
-                    if (document.readyState === 'complete') {
-                      window.googleTranslateElementInit();
-                    }
-                  });
+                  document.addEventListener('DOMContentLoaded', window.googleTranslateElementInit);
                 }
-              }, 1000);
+              }, 1500);
             `,
           }}
         />
@@ -157,6 +155,7 @@ export default function RootLayout({
         <ThemeProvider>
           <FloatingSocials />
           <PWAInstallPrompt />
+          <CookieConsent />
           {children}
         </ThemeProvider>
         <Analytics />

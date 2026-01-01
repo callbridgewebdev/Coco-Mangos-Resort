@@ -1,7 +1,6 @@
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
 import RoomCard from "@/components/room-card"
-import Footer from "@/components/footer"
 
 export default function AccommodationPage() {
   const rooms = [
@@ -70,7 +69,6 @@ export default function AccommodationPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background pb-20 md:pb-0">
       <HeaderWrapper />
-
       <main className="flex-1">
         <section className="section-padding bg-gradient-to-r from-primary to-secondary text-primary-foreground">
           <div className="section-max-width text-center">
@@ -142,7 +140,7 @@ export default function AccommodationPage() {
         </section>
       </main>
 
-      <Footer />
+      {/* removed Footer component rendering */}
       <MobileNav />
     </div>
   )

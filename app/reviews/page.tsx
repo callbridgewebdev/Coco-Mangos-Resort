@@ -4,7 +4,6 @@ import type React from "react"
 
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
-import Footer from "@/components/footer"
 import Link from "next/link"
 import { Star } from "lucide-react"
 import { useState } from "react"
@@ -357,7 +356,6 @@ export default function ReviewsPage() {
         </section>
       </main>
 
-      <Footer />
       <MobileNav />
     </div>
   )

@@ -1,13 +1,22 @@
 "use client"
 
+import type React from "react"
+
 import { useParams } from "next/navigation"
+import { useState } from "react"
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
-import { Star, Users, Wifi, Eye } from "lucide-react"
+import { Star, Users, Wifi, Eye, MessageSquare } from "lucide-react"
 
 export default function RoomDetailPage() {
   const params = useParams()
   const roomId = params.id
+  const [reviews, setReviews] = useState([
+    { id: 1, author: "John Doe", rating: 5, text: "Amazing room with beautiful ocean views!", date: "2025-01-15" },
+    { id: 2, author: "Sarah Smith", rating: 4, text: "Very comfortable and clean. Great service!", date: "2025-01-10" },
+  ])
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [formData, setFormData] = useState({ name: "", email: "", rating: 5, text: "" })
 
   const rooms: { [key: string]: any } = {
     "1": {
@@ -98,6 +107,22 @@ export default function RoomDetailPage() {
 
   const room = rooms[roomId as string]
 
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (formData.name && formData.email && formData.text) {
+      const newReview = {
+        id: reviews.length + 1,
+        author: formData.name,
+        rating: formData.rating,
+        text: formData.text,
+        date: new Date().toISOString().split("T")[0],
+      }
+      setReviews([newReview, ...reviews])
+      setFormData({ name: "", email: "", rating: 5, text: "" })
+      setShowReviewForm(false)
+    }
+  }
+
   if (!room) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
@@ -156,7 +181,6 @@ export default function RoomDetailPage() {
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold mb-4">About This Room</h2>
                   <p className="text-lg text-foreground/80 mb-6 leading-relaxed">{room.description}</p>
-                  <p className="text-foreground/70 leading-relaxed">{room.description}</p>
                 </div>
 
                 {/* Features */}
@@ -227,6 +251,111 @@ export default function RoomDetailPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Reviews Section */}
+        <section className="section-padding bg-muted/30">
+          <div className="section-max-width">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Guest Reviews ({reviews.length})</h2>
+              <button
+                onClick={() => setShowReviewForm(!showReviewForm)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <MessageSquare size={20} />
+                Write Review
+              </button>
+            </div>
+
+            {/* Review Form */}
+            {showReviewForm && (
+              <div className="bg-card border border-border rounded-xl p-6 mb-8">
+                <form onSubmit={handleReviewSubmit} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Your Name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="px-4 py-2 border border-border rounded-lg bg-background"
+                      required
+                    />
+                    <input
+                      type="email"
+                      placeholder="Your Email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="px-4 py-2 border border-border rounded-lg bg-background"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Rating</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, rating: star })}
+                          className={`text-2xl transition ${
+                            star <= formData.rating ? "text-primary" : "text-gray-300"
+                          }`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <textarea
+                    placeholder="Share your experience..."
+                    value={formData.text}
+                    onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background min-h-32"
+                    required
+                  ></textarea>
+
+                  <div className="flex gap-3">
+                    <button type="submit" className="btn-primary">
+                      Submit Review
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(false)}
+                      className="px-6 py-2 border border-border rounded-lg hover:bg-muted transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div key={review.id} className="bg-card border border-border rounded-xl p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">{review.author}</h3>
+                      <p className="text-sm text-foreground/60">{review.date}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          size={16}
+                          className={i < review.rating ? "fill-primary text-primary" : "text-gray-300"}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-foreground/80">{review.text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

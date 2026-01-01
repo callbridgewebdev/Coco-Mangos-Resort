@@ -1,14 +1,16 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/* Removed problematic tw-animate-css import and invalid @custom-variant dark syntax */
+@custom-variant dark (&:is(.dark *));
 
+/* Theme colors for light and dark modes */
 :root {
   --background: #fffef9;
   --foreground: #1a1a1a;
   --card: #ffffff;
   --card-foreground: #1a1a1a;
-  --popover: #ffffff;
-  --popover-foreground: #1a1a1a;
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
   --primary: #d4a574;
   --primary-foreground: #fffef9;
   --secondary: #e8764f;
@@ -17,17 +19,25 @@
   --muted-foreground: #666666;
   --accent: #2d8659;
   --accent-foreground: #fffef9;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #d4a574;
-  --radius: 0.625rem;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -35,8 +45,8 @@
   --foreground: #fffef9;
   --card: #1a1a1a;
   --card-foreground: #fffef9;
-  --popover: #1a1a1a;
-  --popover-foreground: #fffef9;
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
   --primary: #d4a574;
   --primary-foreground: #0f0f0f;
   --secondary: #e8764f;
@@ -45,8 +55,8 @@
   --muted-foreground: #999999;
   --accent: #4fbf7f;
   --accent-foreground: #0f0f0f;
-  --destructive: #ef4444;
-  --destructive-foreground: #0f0f0f;
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: #2a2a2a;
   --input: #2a2a2a;
   --ring: #d4a574;
@@ -55,9 +65,18 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
 }
 
 @theme inline {
+  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -130,7 +149,6 @@
     @apply text-4xl md:text-5xl font-bold mb-8 text-foreground;
   }
 
-  /* Added consistent spacing utilities for better section spacing */
   .section-spacing {
     @apply my-0;
   }

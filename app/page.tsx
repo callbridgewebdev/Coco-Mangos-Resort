@@ -1,14 +1,28 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Home, Info, Bed, Compass, Phone } from "lucide-react"
+import {
+  Home,
+  Info,
+  Bed,
+  Compass,
+  Phone,
+  Trophy,
+  Star,
+  Users,
+  Leaf,
+  Clock,
+  Camera,
+  Shield,
+  Sparkles,
+  Gift,
+} from "lucide-react"
 import HeaderWrapper from "@/components/header-wrapper"
 import HeroSlider from "@/components/hero-slider"
 import Features from "@/components/features"
 import BookingForm from "@/components/booking-form"
 import MobileNav from "@/components/mobile-nav"
 import BookNowModal from "@/components/book-now-modal"
-import Footer from "@/components/footer"
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -212,64 +226,82 @@ export default function Page() {
               Why Choose Our Tour Packages?
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">🏆</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition">
+                  <Trophy className="text-primary" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Expert Guides</h3>
                 <p className="text-foreground/70">
                   Our knowledgeable local guides provide authentic insights into Bohol's culture and nature.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">⭐</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition">
+                  <Star className="text-secondary" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">All-Inclusive</h3>
                 <p className="text-foreground/70">
                   Everything included - meals, transportation, entrance fees, and water activities.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">👥</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition">
+                  <Users className="text-accent" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Small Groups</h3>
                 <p className="text-foreground/70">
                   Intimate group sizes ensure personalized attention and unforgettable memories.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">🌿</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition">
+                  <Leaf className="text-green-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Eco-Friendly</h3>
                 <p className="text-foreground/70">
                   Sustainable tourism practices protecting Bohol's pristine natural environment.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">🎯</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition">
+                  <Clock className="text-blue-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Flexible Scheduling</h3>
                 <p className="text-foreground/70">
                   Choose from fixed departures or customize your adventure based on your preferences.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">📸</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition">
+                  <Camera className="text-purple-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Photo Opportunities</h3>
                 <p className="text-foreground/70">
                   Stunning backdrops and professional photography tips to capture your adventure.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">🛡️</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-red-500/20 transition">
+                  <Shield className="text-red-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Safety First</h3>
                 <p className="text-foreground/70">
                   Comprehensive insurance, safety equipment, and emergency protocols for peace of mind.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">💎</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-yellow-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-yellow-500/20 transition">
+                  <Sparkles className="text-yellow-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Premium Experience</h3>
                 <p className="text-foreground/70">
                   Luxury accommodations, fine dining, and 5-star service throughout your journey.
                 </p>
               </div>
-              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition">
-                <div className="text-4xl mb-4">🎁</div>
+              <div className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition group">
+                <div className="w-12 h-12 bg-pink-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-pink-500/20 transition">
+                  <Gift className="text-pink-500" size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">Special Perks</h3>
                 <p className="text-foreground/70">
                   Complimentary snacks, premium beverages, souvenir packages, and welcome gifts.
@@ -313,7 +345,6 @@ export default function Page() {
       </main>
 
       <MobileNav />
-      <Footer />
     </div>
   )
 }

@@ -275,30 +275,143 @@ export default function Footer() {
 
         {/* Legal Section */}
         <div className="border-t border-background/20 dark:border-foreground/20 pt-8 mb-8">
-          <h4 className="font-bold mb-4">Legal</h4>
-          <ul className="space-y-2 text-background/80 dark:text-foreground/70 text-sm flex flex-wrap gap-4">
-            <li>
-              <Link href="/legal/cookie-policy" className="hover:text-background dark:hover:text-foreground transition">
-                Cookie Policy
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/legal/privacy-policy"
-                className="hover:text-background dark:hover:text-foreground transition"
-              >
-                Privacy Policy
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/legal/terms-of-service"
-                className="hover:text-background dark:hover:text-foreground transition"
-              >
-                Terms of Service
-              </Link>
-            </li>
-          </ul>
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            {/* Legal Links on Left */}
+            <div>
+              <h4 className="font-bold mb-4">Legal</h4>
+              <ul className="space-y-2 text-background/80 dark:text-foreground/70 text-sm flex flex-col gap-2">
+                <li>
+                  <Link
+                    href="/legal/cookie-policy"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/legal/privacy-policy"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/legal/terms-of-service"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Supported Payment Methods on Right Side */}
+            <div className="text-right">
+              <h4 className="font-bold mb-4">Supported Payment Methods</h4>
+              <div className="flex justify-end gap-4 flex-wrap">
+                {/* GCash Logo */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center mb-2">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-10 h-10">
+                      <path d="M50 10C27.9 10 10 27.9 10 50s17.9 40 40 40 40-17.9 40-40S72.1 10 50 10m0 72c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32m10-50H40v16h20V32z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">GCash</span>
+                </div>
+
+                {/* Maya Logo */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-purple-500 rounded-lg flex items-center justify-center mb-2">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-10 h-10">
+                      <circle cx="30" cy="30" r="12" />
+                      <circle cx="70" cy="30" r="12" />
+                      <path d="M50 65c-8 0-15-3-20-8h40c-5 5-12 8-20 8z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">Maya</span>
+                </div>
+
+                {/* Bank Transfer Logo */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center mb-2">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-10 h-10">
+                      <path d="M50 15L20 35v50h60V35L50 15zM30 75V45h40v30H30zm15-15h10v10H45V60z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">Bank Transfer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile responsive: Stack vertically */}
+          <div className="md:hidden space-y-6">
+            <div>
+              <h4 className="font-bold mb-3 text-sm">Legal</h4>
+              <ul className="space-y-2 text-background/80 dark:text-foreground/70 text-xs">
+                <li>
+                  <Link
+                    href="/legal/cookie-policy"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/legal/privacy-policy"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/legal/terms-of-service"
+                    className="hover:text-background dark:hover:text-foreground transition"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-3 text-sm">Supported Payments</h4>
+              <div className="flex gap-3 flex-wrap">
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-blue-500 rounded flex items-center justify-center mb-1">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-7 h-7">
+                      <path d="M50 10C27.9 10 10 27.9 10 50s17.9 40 40 40 40-17.9 40-40S72.1 10 50 10m0 72c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32m10-50H40v16h20V32z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">GCash</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-purple-500 rounded flex items-center justify-center mb-1">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-7 h-7">
+                      <circle cx="30" cy="30" r="12" />
+                      <circle cx="70" cy="30" r="12" />
+                      <path d="M50 65c-8 0-15-3-20-8h40c-5 5-12 8-20 8z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">Maya</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 bg-green-600 rounded flex items-center justify-center mb-1">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-7 h-7">
+                      <path d="M50 15L20 35v50h60V35L50 15zM30 75V45h40v30H30zm15-15h10v10H45V60z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold">Bank</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Copyright */}

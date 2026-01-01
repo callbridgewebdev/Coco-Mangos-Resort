@@ -2,7 +2,6 @@
 
 import HeaderWrapper from "@/components/header-wrapper"
 import MobileNav from "@/components/mobile-nav"
-import Footer from "@/components/footer"
 import { ChevronDown } from "lucide-react"
 import { useState } from "react"
 
@@ -186,7 +185,6 @@ export default function FAQPage() {
         </section>
       </main>
 
-      <Footer />
       <MobileNav />
     </div>
   )
