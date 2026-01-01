@@ -1,10 +1,9 @@
 "use client"
 
 import type React from "react"
-
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react"
+import { ArrowLeft, Plus, Edit2, Trash2 } from "lucide-react"
 import Link from "next/link"
 
 interface Accommodation {
@@ -14,19 +13,22 @@ interface Accommodation {
   price_per_night: number
   description: string
   amenities: string
+  image_url?: string
 }
 
-export default function AccommodationsManagement() {
+function AccommodationsContent() {
   const router = useRouter()
   const [accommodations, setAccommodations] = useState<Accommodation[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     capacity: 2,
     price_per_night: 0,
     description: "",
     amenities: "",
+    image_url: "",
   })
 
   useEffect(() => {
@@ -40,58 +42,80 @@ export default function AccommodationsManagement() {
 
   const fetchAccommodations = async () => {
     try {
-      setAccommodations([
-        {
-          id: "1",
-          name: "Premium Beach Suite",
-          capacity: 2,
-          price_per_night: 499,
-          description: "Luxurious suites with private terraces and ocean views",
-          amenities: "AC, WiFi, TV, Mini Bar",
-        },
-        {
-          id: "2",
-          name: "Deluxe Ocean View",
-          capacity: 3,
-          price_per_night: 399,
-          description: "Spacious rooms with modern amenities and ocean vistas",
-          amenities: "AC, WiFi, TV, Desk",
-        },
-        {
-          id: "3",
-          name: "Beachfront Villa",
-          capacity: 4,
-          price_per_night: 599,
-          description: "Premium villa with direct beach access",
-          amenities: "AC, WiFi, TV, Kitchen, Pool Access",
-        },
-      ])
-      setLoading(false)
+      setLoading(true)
+      const response = await fetch("/api/accommodations")
+      const data = await response.json()
+      setAccommodations(data)
     } catch (error) {
       console.error("[v0] Error fetching accommodations:", error)
+    } finally {
       setLoading(false)
     }
   }
 
-  const handleAddAccommodation = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newAccommodation: Accommodation = {
-      id: (accommodations.length + 1).toString(),
-      ...formData,
+    try {
+      if (editingId) {
+        const response = await fetch(`/api/accommodations/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+        if (response.ok) {
+          fetchAccommodations()
+          setEditingId(null)
+        }
+      } else {
+        const response = await fetch("/api/accommodations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        })
+        if (response.ok) {
+          fetchAccommodations()
+        }
+      }
+      setFormData({
+        name: "",
+        capacity: 2,
+        price_per_night: 0,
+        description: "",
+        amenities: "",
+        image_url: "",
+      })
+      setShowForm(false)
+    } catch (error) {
+      console.error("[v0] Error submitting form:", error)
     }
-    setAccommodations([...accommodations, newAccommodation])
-    setFormData({
-      name: "",
-      capacity: 2,
-      price_per_night: 0,
-      description: "",
-      amenities: "",
-    })
-    setShowForm(false)
   }
 
-  const handleDeleteAccommodation = (id: string) => {
-    setAccommodations(accommodations.filter((acc) => acc.id !== id))
+  const handleEdit = (accommodation: Accommodation) => {
+    setFormData({
+      name: accommodation.name,
+      capacity: accommodation.capacity,
+      price_per_night: accommodation.price_per_night,
+      description: accommodation.description,
+      amenities: accommodation.amenities,
+      image_url: accommodation.image_url || "",
+    })
+    setEditingId(accommodation.id)
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this accommodation?")) {
+      try {
+        const response = await fetch(`/api/accommodations/${id}`, {
+          method: "DELETE",
+        })
+        if (response.ok) {
+          fetchAccommodations()
+        }
+      } catch (error) {
+        console.error("[v0] Error deleting accommodation:", error)
+      }
+    }
   }
 
   if (loading) {
@@ -116,7 +140,18 @@ export default function AccommodationsManagement() {
             <h1 className="text-3xl font-bold text-gray-900">Accommodations Management</h1>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              setEditingId(null)
+              setFormData({
+                name: "",
+                capacity: 2,
+                price_per_night: 0,
+                description: "",
+                amenities: "",
+                image_url: "",
+              })
+              setShowForm(!showForm)
+            }}
             className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition"
           >
             <Plus className="w-5 h-5" />
@@ -126,8 +161,10 @@ export default function AccommodationsManagement() {
 
         {showForm && (
           <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Accommodation</h2>
-            <form onSubmit={handleAddAccommodation} className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {editingId ? "Edit Accommodation" : "Add New Accommodation"}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                   type="text"
@@ -168,16 +205,26 @@ export default function AccommodationsManagement() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 rows={2}
               />
+              <input
+                type="text"
+                placeholder="Image URL"
+                value={formData.image_url}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
               <div className="flex gap-4">
                 <button
                   type="submit"
                   className="flex-1 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition font-medium"
                 >
-                  Add Accommodation
+                  {editingId ? "Update Accommodation" : "Add Accommodation"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition font-medium"
                 >
                   Cancel
@@ -210,12 +257,15 @@ export default function AccommodationsManagement() {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <button className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
-                    <Edit className="w-4 h-4" />
+                  <button
+                    onClick={() => handleEdit(accommodation)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                  >
+                    <Edit2 className="w-4 h-4" />
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteAccommodation(accommodation.id)}
+                    onClick={() => handleDelete(accommodation.id)}
                     className="flex-1 flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -234,5 +284,13 @@ export default function AccommodationsManagement() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AccommodationsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccommodationsContent />
+    </Suspense>
   )
 }

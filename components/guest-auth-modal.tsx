@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { X, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react"
+import { X, Mail, Lock, User, AlertCircle, CheckCircle, Phone } from "lucide-react"
 import { validateEmail, validateUsername, validatePassword } from "@/lib/validation"
 import { getRecaptchaKey } from "@/app/actions/get-recaptcha-key"
 
@@ -28,6 +28,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   const [success, setSuccess] = useState("")
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState("")
+  const [recaptchaEnabled, setRecaptchaEnabled] = useState(true) // Added recaptchaEnabled state
   const recaptchaLoadedRef = useRef(false)
 
   useEffect(() => {
@@ -39,68 +40,44 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   }, [])
 
   useEffect(() => {
-    if (recaptchaSiteKey && !recaptchaLoadedRef.current && isOpen) {
-      recaptchaLoadedRef.current = true
+    const checkRecaptchaEnabled = async () => {
+      try {
+        const response = await fetch("/api/settings/recaptcha")
+        const data = await response.json()
+        setRecaptchaEnabled(data.enabled ?? true)
+      } catch (error) {
+        console.error("[v0] Error checking reCAPTCHA setting:", error)
+        setRecaptchaEnabled(true) // Default to enabled if error
+      }
+    }
+    checkRecaptchaEnabled()
+  }, [isOpen])
 
-      // Check if script already exists
-      if (!document.querySelector('script[src*="recaptcha"]')) {
+  useEffect(() => {
+    if (recaptchaSiteKey && isOpen && recaptchaEnabled) {
+      // Load reCAPTCHA script only once
+      if (!window.grecaptcha) {
         const script = document.createElement("script")
         script.src = "https://www.google.com/recaptcha/api.js"
         script.async = true
         script.defer = true
         script.onload = () => {
           console.log("[v0] reCAPTCHA v2 script loaded successfully")
-          // Use requestAnimationFrame to ensure DOM is ready
-          requestAnimationFrame(() => {
-            renderRecaptchaWidget()
-          })
+          // grecaptcha will auto-render elements with class 'g-recaptcha'
         }
         script.onerror = () => {
           console.error("[v0] Failed to load reCAPTCHA v2 script")
         }
         document.head.appendChild(script)
-      } else {
-        // Script already exists, render the widget
-        if (window.grecaptcha) {
-          requestAnimationFrame(() => {
-            renderRecaptchaWidget()
-          })
-        }
       }
     }
-  }, [recaptchaSiteKey, isOpen])
-
-  const renderRecaptchaWidget = () => {
-    if (!window.grecaptcha) {
-      console.error("[v0] grecaptcha is not available")
-      return
-    }
-
-    const container = document.getElementById("recaptcha")
-    if (!container) {
-      console.error("[v0] reCAPTCHA container not found")
-      return
-    }
-
-    try {
-      // Clear any existing widget
-      container.innerHTML = ""
-      window.grecaptcha.render(container, {
-        sitekey: recaptchaSiteKey,
-        callback: () => {
-          console.log("[v0] reCAPTCHA verified")
-        },
-        "expired-callback": () => {
-          console.log("[v0] reCAPTCHA expired")
-        },
-      })
-      console.log("[v0] reCAPTCHA v2 widget rendered successfully")
-    } catch (error) {
-      console.error("[v0] Failed to render reCAPTCHA widget:", error)
-    }
-  }
+  }, [recaptchaSiteKey, isOpen, recaptchaEnabled])
 
   const getRecaptchaToken = async (): Promise<string> => {
+    if (!recaptchaEnabled) {
+      return "recaptcha_disabled"
+    }
+
     if (!window.grecaptcha) {
       throw new Error("reCAPTCHA not loaded yet")
     }
@@ -186,7 +163,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
 
       if (!response.ok) {
         setError(data.error || "Authentication failed")
-        if (window.grecaptcha) {
+        if (window.grecaptcha && window.grecaptcha.getResponse) {
           window.grecaptcha.reset()
         }
         return
@@ -213,6 +190,26 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
       setError(err instanceof Error ? err.message : "Network error. Please try again.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleAuth = () => {
+    setIsLogin(!isLogin)
+    setError("")
+    setSuccess("")
+    setValidationErrors({})
+    setFormData({
+      email: "",
+      password: "",
+      confirmPassword: "",
+      username: "",
+      fullName: "",
+      phone: "",
+      rememberMe: false,
+      agreeToTerms: false,
+    })
+    if (window.grecaptcha && typeof window.grecaptcha.reset === "function") {
+      window.grecaptcha.reset()
     }
   }
 
@@ -275,7 +272,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
                 <div>
                   <label className="block text-sm font-semibold mb-2">Phone Number</label>
                   <div className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg bg-muted/30">
-                    <User size={18} className="text-secondary" />
+                    <Phone size={18} className="text-secondary" />
                     <input
                       type="tel"
                       value={formData.phone}
@@ -416,25 +413,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin)
-                  setError("")
-                  setSuccess("")
-                  setValidationErrors({})
-                  setFormData({
-                    email: "",
-                    password: "",
-                    confirmPassword: "",
-                    username: "",
-                    fullName: "",
-                    phone: "",
-                    rememberMe: false,
-                    agreeToTerms: false,
-                  })
-                  if (window.grecaptcha) {
-                    window.grecaptcha.reset()
-                  }
-                }}
+                onClick={handleToggleAuth}
                 className="text-primary hover:text-secondary font-semibold transition"
               >
                 {isLogin ? "Register Here" : "Login Here"}
@@ -467,10 +446,11 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
             </a>
             apply.
           </div>
-          {/* reCAPTCHA v2 checkbox widget container */}
-          <div className="mt-4 flex justify-center">
-            <div id="recaptcha" className="g-recaptcha"></div>
-          </div>
+          {recaptchaEnabled && (
+            <div className="mt-4 flex justify-center">
+              <div className="g-recaptcha" data-sitekey={recaptchaSiteKey}></div>
+            </div>
+          )}
         </div>
       </div>
     </div>

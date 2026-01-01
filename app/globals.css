@@ -124,6 +124,17 @@
 }
 
 @layer components {
+  /* Added spin animation for loading spinners */
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
   .gradient-gold-orange {
     @apply bg-gradient-to-r from-primary via-secondary to-accent;
   }
