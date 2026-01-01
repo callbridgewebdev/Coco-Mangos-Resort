@@ -3,7 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Theme colors for light and dark modes */
 :root {
   --background: #fffef9;
   --foreground: #1a1a1a;
