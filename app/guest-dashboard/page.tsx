@@ -267,6 +267,47 @@ export default function GuestDashboardPage() {
                     </button>
                   </div>
 
+                  {/* Recent Transactions Card */}
+                  <div className="bg-card border border-border rounded-xl p-6">
+                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                      <History size={24} className="text-secondary" />
+                      Recent Transactions
+                    </h3>
+                    {topupHistory.length > 0 ? (
+                      <div className="space-y-3">
+                        {topupHistory.slice(0, 5).map((transaction) => (
+                          <div
+                            key={transaction.id}
+                            className="p-3 bg-muted/50 rounded-lg border border-border flex justify-between items-center"
+                          >
+                            <div>
+                              <p className="font-semibold text-sm">{transaction.payment_method}</p>
+                              <p className="text-xs text-foreground/60">
+                                {new Date(transaction.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">+₱{transaction.amount.toFixed(2)}</p>
+                              <span
+                                className={`text-xs px-2 py-1 rounded ${
+                                  transaction.status === "approved"
+                                    ? "bg-green-100 text-green-700"
+                                    : transaction.status === "pending"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {transaction.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center py-6 text-foreground/60">No transactions yet</p>
+                    )}
+                  </div>
+
                   {/* Recent Bookings */}
                   <div className="bg-card border border-border rounded-xl p-6">
                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2">

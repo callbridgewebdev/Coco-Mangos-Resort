@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BarChart3, Users, BookOpen, CreditCard, LogOut, Menu, X, Home, Settings } from "lucide-react"
+import { BarChart3, Users, BookOpen, CreditCard, LogOut, Menu, X, Home, Settings, Star, Tag } from "lucide-react"
 import Link from "next/link"
 
 interface DashboardStats {
@@ -102,7 +102,9 @@ export default function AdminDashboard() {
     { icon: BookOpen, label: "Bookings", href: "/admin-dashboard/bookings" },
     { icon: CreditCard, label: "Payments", href: "/admin-dashboard/payments" },
     { icon: Home, label: "Accommodations", href: "/admin-dashboard/accommodations" },
-    { icon: Settings, label: "Settings", href: "/admin-dashboard/settings" }, // Added Settings menu item
+    { icon: Tag, label: "Coupons", href: "/admin-dashboard/coupons" },
+    { icon: Star, label: "Reviews", href: "/admin-dashboard/reviews" },
+    { icon: Settings, label: "Settings", href: "/admin-dashboard/settings" },
   ]
 
   if (loading || !isAuthenticated) {
