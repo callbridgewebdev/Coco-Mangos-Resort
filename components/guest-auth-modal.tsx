@@ -29,6 +29,7 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [recaptchaToken, setRecaptchaToken] = useState("")
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState("")
+  const [recaptchaWidgetId, setRecaptchaWidgetId] = useState<number | null>(null)
 
   useEffect(() => {
     const loadRecaptchaKey = async () => {
@@ -39,17 +40,31 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
   }, [])
 
   useEffect(() => {
-    // Load reCAPTCHA script if site key is available
+    // Load reCAPTCHA v2 script if site key is available
     if (recaptchaSiteKey && !window.grecaptcha) {
       const script = document.createElement("script")
-      script.src = "https://www.google.com/recaptcha/api.js?render=" + recaptchaSiteKey
+      script.src = "https://www.google.com/recaptcha/api.js"
       script.async = true
       script.defer = true
       script.onload = () => {
-        console.log("[v0] reCAPTCHA script loaded successfully")
+        console.log("[v0] reCAPTCHA v2 script loaded successfully")
+        // Wait for DOM to be ready before rendering
+        setTimeout(() => {
+          const container = document.getElementById("recaptcha")
+          if (container && window.grecaptcha && window.grecaptcha.render) {
+            try {
+              const widgetId = window.grecaptcha.render(container, {
+                sitekey: recaptchaSiteKey,
+              })
+              setRecaptchaWidgetId(widgetId)
+            } catch (error) {
+              console.error("[v0] Failed to render reCAPTCHA widget:", error)
+            }
+          }
+        }, 100)
       }
       script.onerror = () => {
-        console.error("[v0] Failed to load reCAPTCHA script")
+        console.error("[v0] Failed to load reCAPTCHA v2 script")
       }
       document.head.appendChild(script)
     }
@@ -67,8 +82,19 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
     }
 
     try {
-      const token = await window.grecaptcha.execute(recaptchaSiteKey, {
-        action: isLogin ? "login" : "register",
+      const token = await new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("reCAPTCHA timeout")), 5000)
+
+        // For reCAPTCHA v2, we need to render a widget or use the execute method differently
+        // Since we're using v2 checkbox, we'll get token from the widget
+        if (window.grecaptcha && window.grecaptcha.getResponse) {
+          const token = window.grecaptcha.getResponse(recaptchaWidgetId)
+          clearTimeout(timeout)
+          resolve(token)
+        } else {
+          clearTimeout(timeout)
+          reject(new Error("reCAPTCHA widget not ready"))
+        }
       })
       return token
     } catch (error) {
@@ -386,6 +412,9 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
                     rememberMe: false,
                     agreeToTerms: false,
                   })
+                  if (recaptchaWidgetId) {
+                    window.grecaptcha.reset(recaptchaWidgetId)
+                  }
                 }}
                 className="text-primary hover:text-secondary font-semibold transition"
               >
@@ -419,17 +448,23 @@ export default function GuestAuthModal({ isOpen, onClose }: GuestAuthModalProps)
             </a>
             apply.
           </div>
+          {/* reCAPTCHA v2 checkbox widget container */}
+          <div className="mt-4 flex justify-center">
+            <div id="recaptcha" className="g-recaptcha" data-sitekey={recaptchaSiteKey}></div>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// Extend Window type for reCAPTCHA
+// Extend Window type for reCAPTCHA v2
 declare global {
   interface Window {
     grecaptcha: {
-      execute: (siteKey: string, options: { action: string }) => Promise<string>
+      getResponse: (widgetId?: number) => string
+      reset: (widgetId?: number) => void
+      render: (container: string | HTMLElement, options: Record<string, unknown>) => number
     }
   }
 }

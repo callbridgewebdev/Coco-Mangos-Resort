@@ -55,34 +55,12 @@ function CouponsContent() {
         const data = await response.json()
         setCoupons(data)
       } else {
-        setCoupons([
-          {
-            id: "1",
-            code: "HOLIDAY20",
-            coupon_type: "Holiday",
-            discount_percentage: 20,
-            discount_amount: 0,
-            usage_limit: 50,
-            usage_count: 15,
-            expiration_date: "2025-12-31",
-            is_locked: false,
-          },
-          {
-            id: "2",
-            code: "SUMMER25",
-            coupon_type: "Summer",
-            discount_percentage: 25,
-            discount_amount: 0,
-            usage_limit: 30,
-            usage_count: 8,
-            expiration_date: "2025-08-31",
-            is_locked: true,
-          },
-        ])
+        setCoupons([])
       }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching coupons:", error)
+      setCoupons([])
       setLoading(false)
     }
   }

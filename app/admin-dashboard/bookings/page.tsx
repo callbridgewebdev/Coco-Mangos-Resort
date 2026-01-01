@@ -56,46 +56,12 @@ function BookingsContent() {
         const data = await response.json()
         setBookings(data)
       } else {
-        // Fallback mock data
-        setBookings([
-          {
-            id: "1",
-            guest_name: "John Doe",
-            room_name: "Premium Beach Suite",
-            check_in_date: "2025-01-15",
-            check_out_date: "2025-01-18",
-            number_of_guests: 2,
-            status: "confirmed",
-            total_price: 1497,
-            discount_amount: 0,
-          },
-          {
-            id: "2",
-            guest_name: "Jane Smith",
-            room_name: "Deluxe Ocean View",
-            check_in_date: "2025-01-16",
-            check_out_date: "2025-01-19",
-            number_of_guests: 3,
-            status: "pending",
-            total_price: 1197,
-            discount_amount: 200,
-          },
-          {
-            id: "3",
-            guest_name: "Mike Johnson",
-            room_name: "Beachfront Villa",
-            check_in_date: "2025-01-17",
-            check_out_date: "2025-01-20",
-            number_of_guests: 4,
-            status: "completed",
-            total_price: 1797,
-            discount_amount: 0,
-          },
-        ])
+        setBookings([])
       }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching bookings:", error)
+      setBookings([])
       setLoading(false)
     }
   }

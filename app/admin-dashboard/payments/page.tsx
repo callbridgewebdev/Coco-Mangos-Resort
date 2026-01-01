@@ -52,49 +52,12 @@ function PaymentsContent() {
         const data = await response.json()
         setPayments(data)
       } else {
-        // Fallback mock data
-        setPayments([
-          {
-            id: "1",
-            guest_name: "John Doe",
-            booking_id: "BK001",
-            amount: 1497,
-            payment_method: "Account Balance",
-            status: "approved",
-            created_at: "2025-01-14",
-          },
-          {
-            id: "2",
-            guest_name: "Jane Smith",
-            booking_id: "BK002",
-            amount: 1197,
-            payment_method: "GCash",
-            status: "pending",
-            created_at: "2025-01-15",
-          },
-          {
-            id: "3",
-            guest_name: "Mike Johnson",
-            booking_id: "BK003",
-            amount: 1797,
-            payment_method: "PayMaya",
-            status: "approved",
-            created_at: "2025-01-16",
-          },
-          {
-            id: "4",
-            guest_name: "Sarah Davis",
-            booking_id: "BK004",
-            amount: 999,
-            payment_method: "Bank Transfer",
-            status: "failed",
-            created_at: "2025-01-17",
-          },
-        ])
+        setPayments([])
       }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching payments:", error)
+      setPayments([])
       setLoading(false)
     }
   }

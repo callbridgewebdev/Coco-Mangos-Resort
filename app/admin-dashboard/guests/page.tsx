@@ -43,37 +43,12 @@ function GuestsContent() {
         const data = await response.json()
         setGuests(data)
       } else {
-        // Fallback to mock data if API fails
-        setGuests([
-          {
-            id: "1",
-            full_name: "John Doe",
-            email: "john@example.com",
-            phone: "+63 9123456789",
-            account_balance: 5000,
-            created_at: "2025-01-01",
-          },
-          {
-            id: "2",
-            full_name: "Jane Smith",
-            email: "jane@example.com",
-            phone: "+63 9234567890",
-            account_balance: 7500,
-            created_at: "2025-01-02",
-          },
-          {
-            id: "3",
-            full_name: "Mike Johnson",
-            email: "mike@example.com",
-            phone: "+63 9345678901",
-            account_balance: 2500,
-            created_at: "2025-01-03",
-          },
-        ])
+        setGuests([])
       }
       setLoading(false)
     } catch (error) {
       console.error("[v0] Error fetching guests:", error)
+      setGuests([])
       setLoading(false)
     }
   }
