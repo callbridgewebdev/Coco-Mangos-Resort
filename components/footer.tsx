@@ -134,12 +134,6 @@ export default function Footer() {
               <a href="https://youtube.com" className={socialIconClass} title="Subscribe to our YouTube">
                 <Youtube size={20} />
               </a>
-              <a href="https://www.tripadvisor.com" className={socialIconClass} title="Follow us on TripAdvisor">
-                <img src="/social-logos/tripadvisor.jpg" alt="TripAdvisor" className="w-full h-full object-contain" />
-              </a>
-              <a href="https://www.kayak.com" className={socialIconClass} title="Follow us on Kayak">
-                <img src="/social-logos/kayak.jpg" alt="Kayak" className="w-full h-full object-contain" />
-              </a>
               <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
                 <Mail size={20} />
               </a>
@@ -272,12 +266,6 @@ export default function Footer() {
               </a>
               <a href="https://youtube.com" className={socialIconClass} title="Subscribe to our YouTube">
                 <Youtube size={16} />
-              </a>
-              <a href="https://www.tripadvisor.com" className={socialIconClass} title="Follow us on TripAdvisor">
-                <img src="/social-logos/tripadvisor.jpg" alt="TripAdvisor" className="w-full h-full object-contain" />
-              </a>
-              <a href="https://www.kayak.com" className={socialIconClass} title="Follow us on Kayak">
-                <img src="/social-logos/kayak.jpg" alt="Kayak" className="w-full h-full object-contain" />
               </a>
               <a href="mailto:boholcocomangos@gmail.com" className={socialIconClass} title="Email us">
                 <Mail size={16} />

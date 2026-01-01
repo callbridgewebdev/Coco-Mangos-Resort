@@ -88,9 +88,12 @@ export default function RoomCard({ room }: RoomCardProps) {
           >
             View Details
           </Link>
-          <button className="flex-1 py-3 bg-secondary text-secondary-foreground rounded-lg font-bold hover:opacity-90 transition">
-            Book Now
-          </button>
+          <Link
+            href="/tour-packages"
+            className="flex-1 py-3 bg-secondary text-secondary-foreground rounded-lg font-bold hover:opacity-90 transition text-center"
+          >
+            Tour Packages
+          </Link>
         </div>
       </div>
     </div>

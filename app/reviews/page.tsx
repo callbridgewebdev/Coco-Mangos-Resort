@@ -159,7 +159,7 @@ export default function ReviewsPage() {
     review: "",
   })
 
-  const itemsPerPage = 8
+  const itemsPerPage = 10
   const totalPages = Math.ceil(allReviews.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedReviews = allReviews.slice(startIndex, startIndex + itemsPerPage)

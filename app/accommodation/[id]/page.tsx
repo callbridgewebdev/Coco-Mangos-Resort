@@ -10,6 +10,7 @@ import CurrencySwap from "@/components/currency-swap"
 import CouponModal from "@/components/coupon-modal"
 import BookingDetailsModal from "@/components/booking-details-modal"
 import CheckoutModal from "@/components/checkout-modal"
+import Link from "next/link"
 
 export default function RoomDetailPage() {
   const params = useParams()
@@ -333,9 +334,11 @@ export default function RoomDetailPage() {
                     >
                       Apply Coupon
                     </button>
-                    <button className="w-full border-2 border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary hover:text-primary-foreground transition">
-                      Request Info
-                    </button>
+                    <Link href="/tour-packages" className="w-full">
+                      <button className="w-full border-2 border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary hover:text-primary-foreground transition">
+                        Tour Packages
+                      </button>
+                    </Link>
                   </div>
 
                   {/* Info */}
@@ -457,7 +460,7 @@ export default function RoomDetailPage() {
 
             {/* Reviews List */}
             <div className="space-y-4">
-              {reviews.map((review) => (
+              {reviews.slice(0, 4).map((review) => (
                 <div key={review.id} className="bg-card border border-border rounded-xl p-6">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -478,6 +481,14 @@ export default function RoomDetailPage() {
                 </div>
               ))}
             </div>
+
+            {reviews.length > 4 && (
+              <div className="mt-8 text-center">
+                <Link href={`/rooms/${params.id}/reviews`}>
+                  <button className="btn-primary px-8 py-3">View All Reviews ({reviews.length})</button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
