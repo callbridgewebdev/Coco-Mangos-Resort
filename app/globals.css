@@ -135,6 +135,16 @@
     animation: spin 1s linear infinite;
   }
 
+  /* Added hide-scrollbar utility for carousel */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .gradient-gold-orange {
     @apply bg-gradient-to-r from-primary via-secondary to-accent;
   }

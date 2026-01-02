@@ -23,6 +23,7 @@ import Features from "@/components/features"
 import BookingForm from "@/components/booking-form"
 import MobileNav from "@/components/mobile-nav"
 import BookNowModal from "@/components/book-now-modal"
+import TrustedBrands from "@/components/trusted-brands"
 
 export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -311,30 +312,8 @@ export default function Page() {
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section
-          id="contact"
-          className="section-padding bg-gradient-to-r from-primary to-secondary text-primary-foreground"
-        >
-          <div className="section-max-width text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8">Ready to Book?</h2>
-            <p className="text-lg mb-12 opacity-90">Start your tropical escape today</p>
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setIsBookModalOpen(true)}
-                className="px-8 py-3 bg-primary-foreground text-primary rounded-lg font-semibold hover:opacity-90 transition-all inline-block"
-              >
-                Book Now
-              </button>
-              <a
-                href="/contact"
-                className="px-8 py-3 border-2 border-primary-foreground rounded-lg font-semibold hover:bg-primary-foreground/10 transition-all inline-block"
-              >
-                Contact Us
-              </a>
-            </div>
-          </div>
-        </section>
+        {/* Trusted Brands Section */}
+        <TrustedBrands />
 
         {/* Booking Form Section */}
         <section className="section-padding">
